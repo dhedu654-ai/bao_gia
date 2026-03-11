@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NPV Logistics - Phần Mềm Báo Giá</title>
+  <meta name="description"
+    content="Phần mềm báo giá vận chuyển Nhật Phong Vân Logistics - Hỗ trợ nhân viên kinh doanh tính cước nhanh chóng">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">NPV</div>
+        <div class="logo-text">
+          <h1>NPV LOGISTICS</h1>
+          <span>Hệ thống báo giá vận chuyển</span>
+        </div>
+      </div>
+      <div class="header-info">
+        <span>📞 Hotline: 0934.947.999</span>
+        <span>📧 dichvukhachhang@nhatphongvan.com.vn</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="layout">
+
+      <!-- LEFT: Input Form -->
+      <div class="card" id="formCard">
+        <div class="card-header">
+          <span class="icon">📋</span>
+          <h2>Thông tin đơn hàng</h2>
+        </div>
+        <div class="card-body">
+
+          <!-- Thông tin cơ bản -->
+          <div class="section-title">Thông tin cơ bản</div>
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Tên hàng hóa <span class="req">*</span></label>
+              <input type="text" class="form-control" id="productName" placeholder="VD: Linh kiện điện tử, Vải cuộn...">
+            </div>
+            <div class="form-group">
+              <label>Điểm nhận hàng <span class="req">*</span></label>
+              <select class="form-control" id="region">
+                <option value="">-- Chọn --</option>
+                <option value="vung1">Vùng 1 - HCM</option>
+                <option value="vung2">Vùng 2 - Đà Nẵng</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tỉnh/TP trả hàng <span class="req">*</span></label>
+              <select class="form-control" id="province">
+                <option value="">-- Chọn tỉnh/TP --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quận/huyện (Khu vực)</label>
+              <input type="text" class="form-control" id="district" placeholder="VD: Quận 1, Long Thành...">
+            </div>
+            <div class="form-group full-width" id="routeWarningBox"
+              style="display: none; padding: 12px; border-radius: 8px; font-size: 13px; margin-top: -8px; margin-bottom: 8px;">
+            </div>
+            <div class="form-group">
+              <label>Gói cước <span class="req">*</span></label>
+              <select class="form-control" id="packageType">
+                <option value="">-- Chọn --</option>
+                <option value="g1">G1 - Đúng Giờ</option>
+                <option value="g2">G2 - Đảm Bảo</option>
+                <option value="g3">G3 - Tiết Kiệm</option>
+                <option value="g4">G4 - Bao Xe</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Cấp khu vực</label>
+              <select class="form-control" id="areaType">
+                <option value="center">Trung tâm / Nội thành</option>
+                <option value="suburb">Vùng xa / Ngoại thành</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Thông tin hàng hóa (G1/G2/G3) -->
+          <div id="cargoSection">
+            <div class="section-title">Thông tin hàng hóa</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Trọng lượng thực (kg) <span class="req">*</span></label>
+                <input type="number" class="form-control" id="weight" placeholder="VD: 500" min="0">
+              </div>
+              <div class="form-group">
+                <label>Số kiện</label>
+                <input type="number" class="form-control" id="pieces" placeholder="VD: 5" min="1" value="1">
+              </div>
+              <div class="form-group">
+                <label>Dài (m)</label>
+                <input type="number" class="form-control" id="dimL" placeholder="VD: 1.2" step="0.01" min="0">
+              </div>
+              <div class="form-group">
+                <label>Rộng (m)</label>
+                <input type="number" class="form-control" id="dimW" placeholder="VD: 0.8" step="0.01" min="0">
+              </div>
+              <div class="form-group">
+                <label>Cao (m)</label>
+                <input type="number" class="form-control" id="dimH" placeholder="VD: 0.6" step="0.01" min="0">
+              </div>
+              <div class="form-group">
+                <label>Giá trị hàng (VNĐ)</label>
+                <input type="number" class="form-control" id="goodsValue" placeholder="Để tính bảo hiểm" min="0">
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div class="section-title">Đặc điểm hàng hóa</div>
+            <div class="checkbox-row">
+              <label class="checkbox-label">
+                <input type="checkbox" id="isChemical"> <span>Hóa chất / Chất lỏng</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="isNonStackable"> <span>Không chồng được</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="wantInsurance"> <span>Mua bảo hiểm</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="wantDelivery"> <span>Giao tận nơi</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Thông tin bao xe (G4) -->
+          <div id="vehicleSection" class="g4-section">
+            <div class="section-title">Thông tin bao xe</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Loại xe <span class="req">*</span></label>
+                <select class="form-control" id="vehicleType">
+                  <option value="1">Xe 1 tấn (2.8×1.5×1.6m)</option>
+                  <option value="2">Xe 1.5 tấn (3.3×1.5×1.6m)</option>
+                  <option value="3">Xe 2 tấn (4.2×1.7×1.8m)</option>
+                  <option value="4">Xe 3.5 tấn (4.5×1.9×1.9m)</option>
+                  <option value="5">Xe 5 tấn (5.1×2.2×2.1m)</option>
+                  <option value="6">Xe 6 tấn (6.5×2.3×2.6m)</option>
+                  <option value="7">Xe 7 tấn (7.5×2.3×2.6m)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Khoảng cách (km) <span class="req">*</span></label>
+                <input type="number" class="form-control" id="distance" placeholder="VD: 250" min="0">
+              </div>
+              <div class="form-group">
+                <label>Tổng TG từ lúc lấy đến giao xong(h) <span class="help"
+                    title="Tính từ lúc xe có mặt tại kho lấy đến khi hoàn thành xong tại kho giao">*</span></label>
+                <input type="number" class="form-control" id="totalOccupiedHours" placeholder="0" min="0" step="0.5"
+                  value="0">
+              </div>
+              <div class="form-group">
+                <label>TG xe chạy ròng trên đường (h) <span class="help"
+                    title="Trừ đi thời gian bốc xếp tại các trạm">*</span></label>
+                <input type="number" class="form-control" id="drivingHours" placeholder="0" min="0" step="0.5"
+                  value="0">
+              </div>
+              <div class="form-group">
+                <label>Số điểm giao thêm</label>
+                <input type="number" class="form-control" id="extraPoints" placeholder="0" min="0" value="0">
+              </div>
+              <div class="form-group">
+                <label></label>
+                <label class="checkbox-label" style="margin-top: 4px;">
+                  <input type="checkbox" id="hasReturn"> <span>Chiều về có hàng (70% cước)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Phụ phí đặc biệt -->
+          <div class="section-title">Phụ phí đặc biệt (nếu có)</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Đóng kiện gỗ (CBM)</label>
+              <input type="number" class="form-control" id="woodenCrateCBM" placeholder="0" step="0.01" min="0">
+            </div>
+            <div class="form-group">
+              <label>Kiểm đếm (số SP)</label>
+              <input type="number" class="form-control" id="countingQty" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+              <label>Thu hộ COD (VNĐ)</label>
+              <input type="number" class="form-control" id="codAmount" placeholder="0" min="0">
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btnCalculate" onclick="App.calculate()">
+              ⚡ Tính giá cước
+            </button>
+            <button class="btn btn-secondary" onclick="App.reset()">
+              🔄 Làm mới
+            </button>
+            <button class="btn btn-secondary" id="btnCompare" onclick="App.compare()">
+              📊 So sánh gói
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div>
+        <!-- Main result -->
+        <div class="card" id="resultCard">
+          <div class="card-header">
+            <span class="icon">💰</span>
+            <h2>Kết quả báo giá</h2>
+          </div>
+          <div class="card-body">
+            <div class="result-empty" id="resultEmpty">
+              <div class="icon">📦</div>
+              <p>Nhập thông tin đơn hàng và nhấn <strong>"Tính giá cước"</strong></p>
+              <p style="margin-top:8px; font-size:12px;">Hoặc nhấn <strong>"So sánh gói"</strong> để xem giá tất cả gói
+                cước</p>
+            </div>
+            <div class="result-summary" id="resultSummary">
+              <div id="resultContent"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparison -->
+        <div class="card" id="compareCard" style="margin-top:24px; display:none;">
+          <div class="card-header">
+            <span class="icon">📊</span>
+            <h2>So sánh giá gói cước</h2>
+          </div>
+          <div class="card-body">
+            <div id="compareContent"></div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card" style="margin-top:24px;">
+          <div class="card-header">
+            <span class="icon">📝</span>
+            <h2>Lưu ý quan trọng</h2>
+          </div>
+          <div class="card-body">
+            <div class="notes" style="border:none; background:none; padding:0;">
+              <ul>
+                <li>Giá chưa bao gồm 10% VAT và 23% phụ phí xăng dầu (đã tính trong tổng)</li>
+                <li>Hàng nhẹ quy đổi: D×R×C (m) × 300 = kg. Tính cước theo số cao hơn</li>
+                <li>Hàng quá khổ (kích thước chiều dài nhất > 1.5m): +15-30% tùy gói</li>
+                <li>Hàng nguyên khối kiện ≥ 200kg: Cộng phí nâng hạ theo thỏa thuận</li>
+                <li>Không chồng được → CBM tính với chiều cao 2.5m</li>
+                <li>Ngoại thành/huyện xa: +30% cước, +24-48h thời gian giao</li>
+                <li>Giao tận nơi: +12h nội thành, +12-24h ngoại thành</li>
+                <li>Bảo hiểm: 0.08% giá trị hàng. Không mua → bồi thường 1,500đ/kg</li>
+                <li>Booking trước 16h30. Nhận hàng: 8h-19h (T2-T7)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="calculator.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

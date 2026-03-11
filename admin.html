@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Quản Trị Giá - NPV Logistics</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>Cài Đặt Bảng Giá</h1>
+      <p>Sửa đổi trực tiếp trong các ô và ấn nút Lưu để cập nhật tức thì trên toàn hệ thống.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-save" id="btnSave" onclick="saveData()">💾 Lưu Bảng Giá Lên Máy Chủ</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <ul class="nav-menu" id="navMenu">
+        <!-- JS VẼ TABS VÀO ĐÂY -->
+      </ul>
+    </div>
+    
+    <div class="main-content">
+      <!-- Vùng chọn (Vùng 1 / Vùng 2) -->
+      <div class="region-tabs" id="regionTabs" style="display: none;">
+        <button class="region-btn active" data-region="vung1">Từ Vùng 1 (Hồ Chí Minh)</button>
+        <button class="region-btn" data-region="vung2">Từ Vùng 2 (Đà Nẵng)</button>
+      </div>
+
+      <div class="editor-container">
+        <!-- Khung chứa bảng dữ liệu động -->
+        <div id="tableContainer">
+          <div class="loading">Đang tải dữ liệu...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="data.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
