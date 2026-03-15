@@ -8,27 +8,12 @@ const Calculator = {
 
     // Tính CBM
     calcCBM(lengthM, widthM, heightM) {
-        return lengthM * widthM * heightM;
+        return lengthM * widthM * heightM; // Old compatibility
     },
 
-    // Kiểm tra hàng quá khổ (kích thước chiều dài nhất trên 1.5m)
-    isOversized(lengthM, widthM, heightM) {
-        return Math.max(lengthM || 0, widthM || 0, heightM || 0) > 1.5;
-    },
-
-    // Kiểm tra hàng nguyên khối nặng (>= 200kg)
-    needsLiftingFee(weightPerPiece) {
-        return weightPerPiece >= 200;
-    },
-
-    // Tính kg tính cước (max giữa kg thực và kg quy đổi)
-    calcChargeableWeight(actualKg, lengthM, widthM, heightM, isStackable, isOversized) {
-        let effectiveHeight = heightM;
-        // Hàng quá khổ không chồng được → dùng cao 2.5m để tính CBM
-        if (isOversized && !isStackable) {
-            effectiveHeight = 2.5;
-        }
-        const convertedKg = this.convertDimToKg(lengthM, widthM, effectiveHeight);
+    // Quy đổi CBM -> Kg
+    calcChargeableWeight(actualKg, cbm) {
+        const convertedKg = cbm * 300;
         return Math.max(actualKg, convertedKg);
     },
 
@@ -57,7 +42,7 @@ const Calculator = {
         return this.findPriceTier(km, tiers);
     },
 
-    // Tính cước G1/G2/G3
+    // Tính cước lũy tiến G1/G2/G3
     calcRoutePrice(region, packageType, provinceName, chargeableWeight) {
         const pkg = PRICING_DATA[packageType][region];
         if (!pkg) return null;
@@ -65,21 +50,44 @@ const Calculator = {
         const route = pkg.routes.find(r => r.province === provinceName);
         if (!route) return null;
 
-        const tierIdx = this.findPriceTier(chargeableWeight, pkg.weightTiers);
-        const pricePerKg = route.prices[tierIdx];
-        let baseCost = pricePerKg; // Fixed price for the tier, not per kg
+        // Tính cước lũy tiến
+        let totalCost = route.min; // Dưới hoặc bằng 500kg thì luôn tính Phí Min
+        let remainingWeight = chargeableWeight - 500;
+        let lastTierIdx = 0;
 
-        // Áp dụng mức min
-        if (baseCost < route.min) baseCost = route.min;
+        if (remainingWeight > 0) {
+            for (let i = 0; i < pkg.weightTiers.length; i++) {
+                const tier = pkg.weightTiers[i];
+                let rangeSize = Infinity;
+                
+                if (tier.startsWith(">")) {
+                    rangeSize = Infinity;
+                } else {
+                    const parts = tier.split("-");
+                    const min = parseFloat(parts[0]);
+                    const max = parseFloat(parts[1]);
+                    rangeSize = max - min;
+                }
+
+                const price = route.prices[i];
+                const activeKg = Math.min(remainingWeight, rangeSize);
+                
+                totalCost += activeKg * price;
+                remainingWeight -= activeKg;
+                lastTierIdx = i;
+
+                if (remainingWeight <= 0) break;
+            }
+        }
 
         return {
             route,
-            tierIdx,
-            pricePerKg,
-            baseCost,
+            tierIdx: lastTierIdx,
+            pricePerKg: route.prices[lastTierIdx] || 0,
+            baseCost: totalCost,
             min: route.min,
             deliveryTime: route.deliveryTime || `${route.day} - ${route.time}`,
-            weightTier: pkg.weightTiers[tierIdx]
+            weightTier: pkg.weightTiers[lastTierIdx] || '>5000'
         };
     },
 
@@ -163,22 +171,22 @@ const Calculator = {
             totalSurcharge += fee;
         }
 
-        // Phụ phí ngoại thành
+        // Tự động Phụ phí ngoại thành/huyện xa
         if (options.isSuburban) {
             const fee = baseCost * PRICING_DATA.surcharges.suburbanExtraPercent;
-            surcharges.push({ name: "Phụ phí ngoại thành/huyện xa (+30%)", percent: 30, amount: fee });
+            surcharges.push({ name: "Phụ phí vùng thu trả tận nơi khác tuyến", percent: 30, amount: fee });
             totalSurcharge += fee;
         }
 
-        // Phí giao nhận tận nơi
+        // Tự động Phí giao nhận tận nơi
         if (options.deliveryFee && options.deliveryFee > 0) {
-            surcharges.push({ name: "Phí giao nhận tận nơi", amount: options.deliveryFee });
+            surcharges.push({ name: "Phí phụ xe nâng hạ / giao nhận", amount: options.deliveryFee });
             totalSurcharge += options.deliveryFee;
         }
 
-        // Phí đóng kiện gỗ
-        if (options.woodenCrate && options.cbm) {
-            const fee = this.calcWoodenCrateFee(options.cbm);
+        // Phí đóng kiện gỗ (nhập thủ công bằng CBM gỗ)
+        if (options.woodenCrate && options.woodCbm) {
+            const fee = this.calcWoodenCrateFee(options.woodCbm);
             if (fee) {
                 surcharges.push({ name: "Phí đóng kiện gỗ", amount: fee });
                 totalSurcharge += fee;

@@ -1,5 +1,6 @@
 let currentTab = 'g1';
 let currentRegion = 'vung1';
+let currentUserRole = null; // 'admin' (xem) or 'boss' (sửa)
 
 const TABS = [
   { id: 'g1', label: '🚀 G1 - Đúng Giờ' },
@@ -20,6 +21,16 @@ async function loadData() {
   } catch (err) {
     console.warn("Dùng dữ liệu file mẫu do lỗi Cloud hoặc bảng trống.");
   }
+  
+  // Set Effective Date
+  const dateInput = document.getElementById('effectiveDateInput');
+  if (dateInput) {
+    dateInput.value = PRICING_DATA.effectiveDate || new Date().toLocaleDateString('vi-VN');
+    dateInput.addEventListener('change', (e) => {
+      PRICING_DATA.effectiveDate = e.target.value;
+    });
+  }
+
   renderUI();
 }
 
@@ -281,6 +292,10 @@ function renderSurcharges(container) {
 
 // ================= LƯU DATA =================
 async function saveData() {
+  if (currentUserRole !== 'boss') {
+    alert("❌ Chỉ Giám đốc mới có quyền lưu cấu hình!");
+    return;
+  }
   const btn = document.getElementById('btnSave');
   btn.innerText = '⏳ Đang lưu...';
   try {
@@ -290,8 +305,114 @@ async function saveData() {
   } catch (err) {
     alert("❌ Lỗi: " + err.message);
   } finally {
-    btn.innerText = '💾 Lưu Bảng Giá Lên Máy Chủ';
+    btn.innerText = '💾 Lưu Lên Cloud';
   }
+}
+
+// ================= AUTHENTICATION =================
+function login() {
+  const pwd = document.getElementById('authPassword').value;
+  const err = document.getElementById('authError');
+  if (pwd === 'admin') {
+    currentUserRole = 'admin';
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('roleBadge').innerText = '👀 Quyền Xem';
+    document.getElementById('roleBadge').className = 'auth-role-badge admin';
+    document.getElementById('btnSave').style.display = 'none'; // Ẩn nút lưu
+    document.querySelector('label[for="importExcelInput"]').style.display = 'none'; // Ẩn nút nhập
+  } else if (pwd === 'boss') {
+    currentUserRole = 'boss';
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('roleBadge').innerText = '👑 Giám Đốc';
+    document.getElementById('roleBadge').className = 'auth-role-badge';
+  } else {
+    err.style.display = 'block';
+  }
+}
+
+// ================= EXCEL EXPORT / IMPORT =================
+function exportExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Thư viện Excel chưa được tải, vui lòng thử lại sau.');
+    return;
+  }
+  
+  const wb = XLSX.utils.book_new();
+
+  // Export G1/G2/G3
+  ['g1', 'g2', 'g3'].forEach(pkg => {
+    const sheetData = [];
+    sheetData.push(["Vùng", "Tỉnh", "Khu vực", "TG Giao", "Phí Min", ...PRICING_DATA[pkg].vung1.weightTiers]);
+    
+    // Vùng 1
+    PRICING_DATA[pkg].vung1.routes.forEach(r => {
+      sheetData.push(["Từ HCM", r.province, r.area, r.time || r.deliveryTime || "", r.min || 0, ...r.prices]);
+    });
+    // Vùng 2
+    if(PRICING_DATA[pkg].vung2) {
+      PRICING_DATA[pkg].vung2.routes.forEach(r => {
+        sheetData.push(["Từ ĐN", r.province, r.area, r.time || r.deliveryTime || "", r.min || 0, ...r.prices]);
+      });
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    XLSX.utils.book_append_sheet(wb, ws, pkg.toUpperCase());
+  });
+
+  XLSX.writeFile(wb, `BangGia_NPV_${new Date().getTime()}.xlsx`);
+}
+
+function importExcel(e) {
+  if (currentUserRole !== 'boss') {
+    alert("❌ Chỉ Giám đốc mới có quyền Nhập file Excel!");
+    e.target.value = "";
+    return;
+  }
+
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, {type: 'array'});
+
+      // Xử lý đơn giản cho G1 làm ví dụ (Cần map logic phức tạp nếu muốn import chuẩn hoàn toàn)
+      const g1Sheet = workbook.Sheets['G1'];
+      if(g1Sheet) {
+        const json = XLSX.utils.sheet_to_json(g1Sheet, {header: 1});
+        // Bỏ header (dòng 0)
+        let newRoutesVung1 = [];
+        let newRoutesVung2 = [];
+        for(let i=1; i<json.length; i++) {
+          let row = json[i];
+          if(!row || row.length < 5) continue;
+          let rData = {
+            zone: row[0].includes('HCM') ? 1 : 2,
+            province: row[1],
+            code: "",
+            area: row[2] || "",
+            deliveryTime: row[3] || "",
+            min: parseFloat(row[4]) || 0,
+            prices: row.slice(5).map(v => parseFloat(v) || 0)
+          };
+          if(rData.zone === 1) newRoutesVung1.push(rData);
+          else newRoutesVung2.push(rData);
+        }
+        
+        if(newRoutesVung1.length > 0) PRICING_DATA.g1.vung1.routes = newRoutesVung1;
+        if(newRoutesVung2.length > 0 && PRICING_DATA.g1.vung2) PRICING_DATA.g1.vung2.routes = newRoutesVung2;
+      }
+      
+      alert("✅ Nhập cấu hình thành công vào hệ thống tạm. Hãy ấn 'Lưu Lên Cloud' để áp dụng!");
+      renderContent();
+    } catch(err) {
+      alert("❌ Lỗi đọc file Excel: " + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = "";
 }
 
 document.addEventListener('DOMContentLoaded', loadData);

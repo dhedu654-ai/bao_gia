@@ -21,9 +21,12 @@
           <span>Hệ thống báo giá vận chuyển</span>
         </div>
       </div>
-      <div class="header-info">
-        <span>📞 Hotline: 0934.947.999</span>
-        <span>📧 dichvukhachhang@nhatphongvan.com.vn</span>
+      <div class="header-info" style="display:flex; align-items:center; gap: 16px;">
+        <div style="display:flex; flex-direction:column; gap:4px; font-size:13px;">
+          <span>📞 Hotline: 0934.947.999</span>
+          <span>📧 dichvukhachhang@nhatphongvan.com.vn</span>
+        </div>
+        <a href="admin.html" class="btn btn-secondary" style="text-decoration:none; padding:8px 16px; font-size:13px; margin-left:12px; border:1px solid #cbd5e1; border-radius:6px; color: #1e293b; background: white;">⚙️ Bảng Quản Trị Giá</a>
       </div>
     </div>
   </header>
@@ -91,36 +94,31 @@
           <!-- Thông tin hàng hóa (G1/G2/G3) -->
           <div id="cargoSection">
             <div class="section-title">Thông tin hàng hóa</div>
-            <div class="form-grid">
-              <div class="form-group">
-                <label>Trọng lượng thực (kg) <span class="req">*</span></label>
-                <input type="number" class="form-control" id="weight" placeholder="VD: 500" min="0">
-              </div>
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
               <div class="form-group">
                 <label>Số kiện</label>
                 <input type="number" class="form-control" id="pieces" placeholder="VD: 5" min="1" value="1">
               </div>
               <div class="form-group">
-                <label>Dài (m)</label>
-                <input type="number" class="form-control" id="dimL" placeholder="VD: 1.2" step="0.01" min="0">
+                <label>Trọng lượng thực (kg) <span class="req">*</span></label>
+                <input type="number" class="form-control" id="weight" placeholder="VD: 500" min="0">
               </div>
               <div class="form-group">
-                <label>Rộng (m)</label>
-                <input type="number" class="form-control" id="dimW" placeholder="VD: 0.8" step="0.01" min="0">
+                <label>Tổng khối lượng (CBM)</label>
+                <input type="number" class="form-control" id="cbm" placeholder="VD: 1.5" step="0.01" min="0">
               </div>
               <div class="form-group">
-                <label>Cao (m)</label>
-                <input type="number" class="form-control" id="dimH" placeholder="VD: 0.6" step="0.01" min="0">
-              </div>
-              <div class="form-group">
-                <label>Giá trị hàng (VNĐ)</label>
-                <input type="number" class="form-control" id="goodsValue" placeholder="Để tính bảo hiểm" min="0">
+                <label>Giá trị hàng hóa (VNĐ)</label>
+                <input type="number" class="form-control" id="goodsValue" placeholder="Tính COD/Bảo hiểm" min="0">
               </div>
             </div>
 
             <div class="divider"></div>
             <div class="section-title">Đặc điểm hàng hóa</div>
-            <div class="checkbox-row">
+            <div class="checkbox-row" style="grid-template-columns: 1fr 1fr; gap:12px;">
+              <label class="checkbox-label" title="Kiện > 1m hoặc trọng lượng > 150kg/kiện">
+                <input type="checkbox" id="isOversized"> <span style="color:var(--warning);font-weight:600;">📦 Hàng quá khổ (> 1m | > 150kg)</span>
+              </label>
               <label class="checkbox-label">
                 <input type="checkbox" id="isChemical"> <span>Hóa chất / Chất lỏng</span>
               </label>
@@ -128,10 +126,10 @@
                 <input type="checkbox" id="isNonStackable"> <span>Không chồng được</span>
               </label>
               <label class="checkbox-label">
-                <input type="checkbox" id="wantInsurance"> <span>Mua bảo hiểm</span>
+                <input type="checkbox" id="wantInsurance"> <span>Mua bảo hiểm (0.08%)</span>
               </label>
               <label class="checkbox-label">
-                <input type="checkbox" id="wantDelivery"> <span>Giao tận nơi</span>
+                <input type="checkbox" id="wantDelivery"> <span>Giao hàng tận nơi</span>
               </label>
             </div>
           </div>
@@ -232,6 +230,23 @@
             </div>
             <div class="result-summary" id="resultSummary">
               <div id="resultContent"></div>
+
+              <!-- Xuất Báo Giá Word -->
+              <div id="wordExportSection" style="display:none; margin-top: 16px; padding: 16px; background:#f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
+                <h3 style="margin:0 0 12px 0; font-size:14px; color:#0f172a;">Xuất Báo Giá (.docx)</h3>
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <input type="text" class="form-control" id="exportCustomerName" placeholder="Tên khách hàng / Công ty">
+                </div>
+                <div class="checkbox-row" style="margin-bottom: 12px; grid-template-columns: 1fr; gap:6px;">
+                  <label class="checkbox-label"><input type="checkbox" id="expIncludeDelivery" checked> Gồm phí giao hàng (+310.000đ/chuyến)</label>
+                  <label class="checkbox-label"><input type="checkbox" id="expCBM" checked> Lời thoại tính cước CBM (550.000đ/cbm)</label>
+                  <label class="checkbox-label"><input type="checkbox" id="expNoneVat" checked> Ghi chú cước chưa VAT & bốc xếp 2 đầu</label>
+                </div>
+                <button class="btn btn-primary" style="width:100%; justify-content:center; background:#10b981; border-color: #059669;" onclick="App.exportWord()">
+                  <span style="margin-right:8px">📄</span> Tải file Word Báo Giá
+                 </button>
+              </div>
+
             </div>
           </div>
         </div>
@@ -275,6 +290,8 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Thư viện docx js để xuất báo giá -->
+  <script src="https://unpkg.com/docx@8.2.3/build/index.js"></script>
   <script src="config.js"></script>
   <script src="data.js"></script>
   <script src="calculator.js"></script>
