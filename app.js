@@ -621,24 +621,26 @@ const App = {
   },
 
   exportWord() {
+    try {
     const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel } = docx;
     
     const f = this.getFormData();
-    const customerName = document.getElementById('exportCustomerName').value || 'Quý Khách Hàng';
+    const customerName = document.getElementById('exportCustomerName')?.value || 'Quý Khách Hàng';
     const today = new Date();
     const dateStr = 'ngày ' + String(today.getDate()).padStart(2,'0') + ' tháng ' + String(today.getMonth()+1).padStart(2,'0') + ' năm ' + today.getFullYear();
     
     // Collect selected export options
+    const chk = (id) => document.getElementById(id)?.checked || false;
     const expOpts = {
-      includeDelivery: document.getElementById('expIncludeDelivery').checked,
-      includeCBM: document.getElementById('expCBM').checked,
-      includeNoVat: document.getElementById('expNoneVat').checked,
-      includeOversized: document.getElementById('expOversized')?.checked || false,
-      includeChemical: document.getElementById('expChemical').checked,
-      includeInsurance: document.getElementById('expInsurance').checked,
-      includeWoodenCrate: document.getElementById('expWoodenCrate').checked,
-      includeCounting: document.getElementById('expCounting').checked,
-      includeCOD: document.getElementById('expCOD').checked,
+      includeDelivery: chk('expIncludeDelivery'),
+      includeCBM: chk('expCBM'),
+      includeNoVat: chk('expNoneVat'),
+      includeOversized: chk('expOversized'),
+      includeChemical: chk('expChemical'),
+      includeInsurance: chk('expInsurance'),
+      includeWoodenCrate: chk('expWoodenCrate'),
+      includeCounting: chk('expCounting'),
+      includeCOD: chk('expCOD'),
     };
 
     // Build conditions list
@@ -747,6 +749,7 @@ const App = {
       a.click();
       URL.revokeObjectURL(url);
     });
+    } catch(e) { console.error('Export error:', e); alert('Lỗi xuất file: ' + e.message); }
   },
 
 

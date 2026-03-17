@@ -251,24 +251,26 @@
         <div class="result-summary" id="resultSummary">
           <div id="resultContent"></div>
           <!-- Xuất Báo Giá Word -->
-          <div id="wordExportSection" style="display:none; margin-top: 16px; padding: 20px; background: linear-gradient(135deg, #f0f9ff, #f8fafc); border-top: 2px solid #1B75BB; border-radius: 0 0 12px 12px;">
-            <h3 style="margin:0 0 16px 0; font-size:15px; color:#0f172a;">📄 Xuất Báo Giá Word</h3>
-
-            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:8px;">Chọn điều khoản hiển thị trong báo giá:</label>
-            <div class="checkbox-row" style="margin-bottom: 14px; gap: 6px; flex-wrap:wrap;">
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expNoneVat" checked> Chưa VAT &amp; Bốc xếp</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expIncludeDelivery" checked> Giao hàng tận nơi</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expCBM" checked> Đơn giá CBM</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expOversized"> Hàng quá khổ</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expChemical"> Hóa chất</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expInsurance"> Bảo hiểm</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expWoodenCrate"> Đóng kiện gỗ</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expCounting"> Kiểm đếm</label>
-              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expCOD"> Thu hộ COD</label>
+          <div id="wordExportSection" style="display:none; margin-top: 16px; padding: 16px 20px; background: linear-gradient(135deg, #f0f9ff, #f8fafc); border-top: 2px solid #1B75BB; border-radius: 0 0 12px 12px;">
+            <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:280px;">
+                <h3 style="margin:0 0 10px 0; font-size:14px; color:#0f172a;">📄 Xuất Báo Giá Word</h3>
+                <div style="display:flex; flex-wrap:wrap; gap:4px 8px;">
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expNoneVat" checked> Chưa VAT</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expIncludeDelivery" checked> Giao tận nơi</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expCBM" checked> CBM</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expOversized"> Quá khổ</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expChemical"> Hóa chất</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expInsurance"> Bảo hiểm</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expWoodenCrate"> Kiện gỗ</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expCounting"> Kiểm đếm</label>
+                  <label style="font-size:11px; display:inline-flex; align-items:center; gap:3px; padding:3px 6px; background:white; border:1px solid #e2e8f0; border-radius:4px; cursor:pointer; white-space:nowrap;"><input type="checkbox" id="expCOD"> COD</label>
+                </div>
+              </div>
+              <button class="btn btn-export" onclick="App.exportWord()" style="padding:14px 28px; font-size:14px; font-weight:600; background: linear-gradient(135deg, #1B75BB, #2563eb); color:white; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:8px; white-space:nowrap; align-self:center; box-shadow:0 2px 8px rgba(27,117,187,0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(27,117,187,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 8px rgba(27,117,187,0.3)'">
+                📄 Tải Word
+              </button>
             </div>
-            <button class="btn btn-export" onclick="App.exportWord()" style="width:100%; padding:12px; font-size:14px; font-weight:600; background: linear-gradient(135deg, #1B75BB, #2563eb); color:white; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
-              📄 Tải file Word Báo Giá
-            </button>
           </div>
         </div>
       </div>
