@@ -46,10 +46,6 @@
             <label>Tên khách hàng / Công ty</label>
             <input type="text" class="form-control" id="exportCustomerName" placeholder="VD: Công ty TNHH ABC...">
           </div>
-          <div class="form-group full-width">
-            <label>Tên hàng hóa <span class="req">*</span></label>
-            <input type="text" class="form-control" id="productName" placeholder="VD: Linh kiện điện tử, Vải cuộn...">
-          </div>
         </div>
 
         <div class="divider"></div>
@@ -58,6 +54,10 @@
         <div id="cargoSection">
           <div class="section-title">Thông tin hàng hóa</div>
           <div class="form-grid cols-2">
+            <div class="form-group full-width">
+              <label>Tên hàng hóa <span class="req">*</span></label>
+              <input type="text" class="form-control" id="productName" placeholder="VD: Linh kiện điện tử, Vải cuộn...">
+            </div>
             <div class="form-group">
               <label>Số kiện</label>
               <input type="number" class="form-control" id="pieces" placeholder="VD: 5" min="1" value="1">
@@ -102,29 +102,31 @@
 
         <!-- 3. THÔNG TIN ĐỊA ĐIỂM -->
         <div class="section-title">Thông tin địa điểm</div>
+        
+        <div style="font-size:13px; font-weight:600; color:#475569; margin-bottom:8px;">Điểm nhận hàng</div>
         <div class="form-grid cols-2">
           <div class="form-group full-width">
-            <label>Điểm nhận hàng (Kho xuất) <span class="req">*</span></label>
+            <label>Kho xuất <span class="req">*</span></label>
             <select class="form-control" id="region">
               <option value="">-- Chọn điểm nhận hàng --</option>
               <option value="vung1">Vùng 1 - Hồ Chí Minh</option>
               <option value="vung2">Vùng 2 - Đà Nẵng</option>
             </select>
           </div>
+        </div>
+
+        <div style="font-size:13px; font-weight:600; color:#475569; margin-bottom:8px; margin-top:12px;">Điểm trả hàng</div>
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
           <div class="form-group">
-            <label>Tỉnh/TP trả hàng <span class="req">*</span></label>
+            <label>Tỉnh/TP <span class="req">*</span></label>
             <select class="form-control" id="province">
               <option value="">-- Chọn tỉnh/TP --</option>
             </select>
           </div>
           <div class="form-group">
-            <label>Quận/huyện (Khu vực)</label>
+            <label>Quận/huyện</label>
             <input type="text" class="form-control" id="district" placeholder="VD: Quận 1, Long Thành...">
           </div>
-
-          <div class="form-group full-width" id="routeWarningBox"
-            style="display: none; padding: 12px; border-radius: 8px; font-size: 13px;"></div>
-
           <div class="form-group">
             <label>Cấp khu vực</label>
             <select class="form-control" id="areaType">
@@ -133,6 +135,9 @@
             </select>
           </div>
         </div>
+
+        <div class="form-group full-width" id="routeWarningBox"
+          style="display: none; padding: 12px; border-radius: 8px; font-size: 13px;"></div>
 
         <div class="divider"></div>
 
@@ -248,11 +253,6 @@
           <!-- Xuất Báo Giá Word -->
           <div id="wordExportSection" style="display:none; margin-top: 16px; padding: 20px; background: linear-gradient(135deg, #f0f9ff, #f8fafc); border-top: 2px solid #1B75BB; border-radius: 0 0 12px 12px;">
             <h3 style="margin:0 0 16px 0; font-size:15px; color:#0f172a;">📄 Xuất Báo Giá Word</h3>
-            
-            <div style="margin-bottom:14px;">
-              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">Tên khách hàng</label>
-              <input type="text" id="exportCustomerName" placeholder="VD: Công ty TNHH ABC" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
-            </div>
 
             <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:8px;">Chọn điều khoản hiển thị trong báo giá:</label>
             <div class="checkbox-row" style="margin-bottom: 14px; gap: 6px; flex-wrap:wrap;">
