@@ -352,7 +352,7 @@ function renderStandardPackageTable(container, pkgId, regionId) {
 
   // Header
   const trHead = document.createElement('tr');
-  const theads = ['Gỡ', 'Vùng', 'Tỉnh', 'Mã', 'Khu vực', 'TG Giao', 'Phí Min', ...pkgData.weightTiers];
+  const theads = ['Thao tác', 'Vùng', 'Tỉnh', 'Mã', 'Khu vực', 'TG Giao', 'Phí Min', ...pkgData.weightTiers];
   theads.forEach(thTxt => {
     const th = document.createElement('th');
     th.innerText = thTxt;
@@ -381,8 +381,8 @@ function renderStandardPackageTable(container, pkgId, regionId) {
     const authStyle = currentUserRole !== 'boss' ? 'display:none;' : '';
     
     if (!isInactive) {
-      tdAct.innerHTML = `<button class="btn btn-outline" style="padding:4px 8px; font-size:12px; margin-right:4px; ${authStyle}" onclick="openRouteModal(${idx})">✏️ Sửa</button>
-                         <button class="btn btn-remove" style="${authStyle} padding:4px 8px;" onclick="openDeleteModal(${idx})">✖</button>`;
+      tdAct.innerHTML = `<button style="padding:4px 8px; font-size:16px; margin-right:4px; border:none; background:transparent; cursor:pointer; color:#1B75BB; ${authStyle}" title="Sửa" onclick="openRouteModal(${idx})">✏️</button>
+                         <button style="${authStyle} padding:4px 8px; font-size:16px; border:none; background:transparent; cursor:pointer; color:#ef4444;" title="Ngừng hoạt động" onclick="openDeleteModal(${idx})">✖</button>`;
     } else {
       tdAct.innerHTML = `<span style="font-size:11px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">Đã Ngừng<br>(${route.endDate || 'N/A'})</span>`;
     }
@@ -419,7 +419,7 @@ function renderG4Table(container, regionId) {
   table.className = 'data-table';
 
   const trHead = document.createElement('tr');
-  const theads = ['Gỡ', 'ID', 'Loại xe', 'Kích thước', 'TG Bốc', 'Base (10km)', ...pkgData.kmTiers.slice(1), 'Phí Chờ', 'Thêm Điểm'];
+  const theads = ['Thao tác', 'ID', 'Loại xe', 'Kích thước', 'TG Bốc', 'Base (10km)', ...pkgData.kmTiers.slice(1), 'Phí Chờ', 'Thêm Điểm'];
   theads.forEach(t => { const th = document.createElement('th'); th.innerText = t; trHead.appendChild(th); });
   table.appendChild(trHead);
 
@@ -437,8 +437,8 @@ function renderG4Table(container, regionId) {
     const authStyle = currentUserRole !== 'boss' ? 'display:none;' : '';
     
     if (!isInactive) {
-      tdAct.innerHTML = `<button class="btn btn-outline" style="padding:4px 8px; font-size:12px; margin-right:4px; ${authStyle}" onclick="openG4Modal(${idx})">✏️ Sửa</button>
-                         <button class="btn btn-remove" style="${authStyle} padding:4px 8px;" onclick="openDeleteModalG4(${idx})">✖</button>`;
+      tdAct.innerHTML = `<button style="padding:4px 8px; font-size:16px; margin-right:4px; border:none; background:transparent; cursor:pointer; color:#1B75BB; ${authStyle}" title="Sửa" onclick="openG4Modal(${idx})">✏️</button>
+                         <button style="${authStyle} padding:4px 8px; font-size:16px; border:none; background:transparent; cursor:pointer; color:#ef4444;" title="Ngừng hoạt động" onclick="openDeleteModalG4(${idx})">✖</button>`;
     } else {
       tdAct.innerHTML = `<span style="font-size:11px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">Đã Ngừng<br>(${v.endDate || 'N/A'})</span>`;
     }
