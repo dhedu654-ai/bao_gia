@@ -8,11 +8,28 @@ const Calculator = {
 
     // Tính CBM
     calcCBM(lengthM, widthM, heightM) {
-        return lengthM * widthM * heightM; // Old compatibility
+        return lengthM * widthM * heightM;
     },
 
-    // Quy đổi CBM -> Kg
-    calcChargeableWeight(actualKg, cbm) {
+    // Kiểm tra hàng quá khổ: cạnh dài nhất > 1m hoặc KL/kiện > 150kg
+    isOversized(dimL, dimW, dimH, weightPerPiece) {
+        if (dimL > 1 || dimW > 1 || dimH > 1) return true;
+        if (weightPerPiece && weightPerPiece > 150) return true;
+        return false;
+    },
+
+    // Quy đổi CBM -> Kg (hỗ trợ cả 2 cách gọi)
+    // Cách 1: calcChargeableWeight(actualKg, cbm)
+    // Cách 2: calcChargeableWeight(actualKg, L, W, H, stackable, oversized)
+    calcChargeableWeight(actualKg, arg2, arg3, arg4, stackable, oversized) {
+        let cbm;
+        if (arg3 !== undefined && arg4 !== undefined) {
+            // Gọi kiểu (actualKg, L, W, H, ...)
+            cbm = arg2 * arg3 * arg4;
+        } else {
+            // Gọi kiểu (actualKg, cbm)
+            cbm = arg2;
+        }
         const convertedKg = cbm * 300;
         return Math.max(actualKg, convertedKg);
     },
@@ -185,8 +202,8 @@ const Calculator = {
         }
 
         // Phí đóng kiện gỗ (nhập thủ công bằng CBM gỗ)
-        if (options.woodenCrate && options.woodCbm) {
-            const fee = this.calcWoodenCrateFee(options.woodCbm);
+        if (options.woodenCrate && options.cbm) {
+            const fee = this.calcWoodenCrateFee(options.cbm);
             if (fee) {
                 surcharges.push({ name: "Phí đóng kiện gỗ", amount: fee });
                 totalSurcharge += fee;

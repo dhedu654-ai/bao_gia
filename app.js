@@ -75,10 +75,9 @@ const App = {
       areaType: document.getElementById('areaType').value,
       weight: parseFloat(document.getElementById('weight').value) || 0,
       pieces: parseInt(document.getElementById('pieces').value) || 1,
-      dimL: parseFloat(document.getElementById('dimL').value) || 0,
-      dimW: parseFloat(document.getElementById('dimW').value) || 0,
-      dimH: parseFloat(document.getElementById('dimH').value) || 0,
+      cbm: parseFloat(document.getElementById('cbm').value) || 0,
       goodsValue: parseFloat(document.getElementById('goodsValue').value) || 0,
+      isOversized: document.getElementById('isOversized').checked,
       isChemical: document.getElementById('isChemical').checked,
       isNonStackable: document.getElementById('isNonStackable').checked,
       wantInsurance: document.getElementById('wantInsurance').checked,
@@ -128,14 +127,13 @@ const App = {
   calculateRoute(f) {
     // Tính kg tính cước
     const weightPerPiece = f.weight / f.pieces;
-    const oversized = Calculator.isOversized(f.dimL, f.dimW, f.dimH);
-    const needsLifting = Calculator.needsLiftingFee(weightPerPiece);
+    const oversized = f.isOversized;
+    const needsLifting = weightPerPiece >= 200;
     let chargeableWeight = f.weight;
 
-    if (f.dimL > 0 && f.dimW > 0 && f.dimH > 0) {
-      chargeableWeight = Calculator.calcChargeableWeight(
-        f.weight, f.dimL, f.dimW, f.dimH, !f.isNonStackable, oversized
-      );
+    // Nếu có CBM, quy đổi kg = CBM × 300, lấy max(thực, quy đổi)
+    if (f.cbm > 0) {
+      chargeableWeight = Calculator.calcChargeableWeight(f.weight, f.cbm);
     }
 
     // Tính giá cơ bản
@@ -249,88 +247,6 @@ const App = {
     });
   },
 
-  renderResult(data) {
-    const container = document.getElementById('resultContent');
-
-    let html = `
-      <div class="price-main">
-        <div class="label">TỔNG CƯỚC (đã bao gồm VAT + Phụ phí xăng dầu)</div>
-        <div class="amount">${Calculator.formatVND(data.total)}</div>
-        <div class="sub">${data.productName ? data.productName + ' | ' : ''}${data.packageName}</div>
-      </div>
-
-      <div class="delivery-info">
-        <div class="delivery-item">
-          <div class="icon">📍</div>
-          <div class="label">Tuyến đường</div>
-          <div class="value">${data.region.split(' - ')[0]} → ${data.district ? data.district + ', ' : ''}${data.province}</div>
-        </div>
-        <div class="delivery-item">
-          <div class="icon">⏱️</div>
-          <div class="label">Thời gian giao</div>
-          <div class="value">${data.deliveryTime}</div>
-        </div>
-        <div class="delivery-item">
-          <div class="icon">⚖️</div>
-          <div class="label">KL tính cước</div>
-          <div class="value">${data.chargeableWeight} kg${data.isConverted ? ' (QĐ)' : ''}</div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-      <div class="section-title">Chi tiết cước phí</div>
-      
-      <div class="detail-row">
-        <span class="label">Cước cơ bản (Nấc ${data.weightTier})</span>
-        <span class="value">${Calculator.formatVND(data.baseCost)}</span>
-      </div>`;
-
-    if (data.surcharges.length > 0) {
-      html += `<div class="divider"></div><div class="section-title">Phụ phí</div><div class="surcharge-list">`;
-      for (const s of data.surcharges) {
-        html += `<div class="surcharge-item">
-          <span class="name">${s.name}${s.percent ? ` (+${s.percent}%)` : ''}</span>
-          <span class="amount">+${Calculator.formatVND(s.amount)}</span>
-        </div>`;
-      }
-      html += `</div>`;
-    }
-
-    html += `
-      <div class="divider"></div>
-      <div class="detail-row">
-        <span class="label">Tạm tính</span>
-        <span class="value">${Calculator.formatVND(data.subtotal)}</span>
-      </div>
-      <div class="detail-row">
-        <span class="label">Phụ phí xăng dầu (23%)</span>
-        <span class="value">+${Calculator.formatVND(data.fuel)}</span>
-      </div>
-      <div class="detail-row">
-        <span class="label">VAT (10%)</span>
-        <span class="value">+${Calculator.formatVND(data.vat)}</span>
-      </div>
-      <div class="detail-row total">
-        <span class="label">💰 TỔNG CỘNG</span>
-        <span class="value">${Calculator.formatVND(data.total)}</span>
-      </div>`;
-
-    if (data.oversized) {
-      html += `<div style="margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:12px;color:var(--warning);">
-        ⚠️ Hàng quá khổ (cạnh > 1.5m)${data.isConverted ? ' - KL quy đổi cao hơn KL thực' : ''}
-      </div>`;
-    }
-    if (data.needsLifting) {
-      html += `<div style="margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:12px;color:var(--warning);">
-        ⚠️ Hàng nguyên khối nặng (≥ 200kg/kiện) - Yêu cầu cộng thêm phí nâng hạ theo thỏa thuận.
-      </div>`;
-    }
-
-    container.innerHTML = html;
-    document.getElementById('resultEmpty').style.display = 'none';
-    document.getElementById('resultSummary').classList.add('show');
-  },
-
   renderG4Result(data) {
     const container = document.getElementById('resultContent');
     let html = `
@@ -419,6 +335,92 @@ const App = {
       💡 Cước phí cầu đường, bến bãi (nếu có) thanh toán theo phát sinh thực tế.
     </div>`;
 
+    if (data.oversized) {
+      html += `<div style="margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:12px;color:var(--warning);">
+        ⚠️ Hàng quá khổ (cạnh > 1m hoặc > 150kg/kiện)${data.isConverted ? ' - KL quy đổi cao hơn KL thực' : ''}
+      </div>`;
+    }
+    if (data.needsLifting) {
+      html += `<div style="margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.1);border-radius:8px;font-size:12px;color:var(--warning);">
+        ⚠️ Hàng nguyên khối nặng (≥ 200kg/kiện) - Yêu cầu cộng thêm phí nâng hạ theo thỏa thuận.
+      </div>`;
+    }
+
+    container.innerHTML = html;
+    document.getElementById('resultEmpty').style.display = 'none';
+    document.getElementById('resultSummary').classList.add('show');
+  },
+
+  renderResult(data) {
+    const container = document.getElementById('resultContent');
+
+    let html = `
+      <div class="price-main">
+        <div class="label">TỔNG CƯỚC (đã bao gồm VAT + Phụ phí xăng dầu)</div>
+        <div class="amount">${Calculator.formatVND(data.total)}</div>
+        <div class="sub">${data.productName ? data.productName + ' | ' : ''}${data.packageName}</div>
+      </div>
+
+      <div class="delivery-info">
+        <div class="delivery-item">
+          <div class="icon">📍</div>
+          <div class="label">Tuyến đường</div>
+          <div class="value">${data.region.split(' - ')[0]} → ${data.district ? data.district + ', ' : ''}${data.province}</div>
+        </div>
+        <div class="delivery-item">
+          <div class="icon">⏱️</div>
+          <div class="label">Thời gian giao</div>
+          <div class="value">${data.deliveryTime}</div>
+        </div>
+        <div class="delivery-item">
+          <div class="icon">⚖️</div>
+          <div class="label">KL tính cước</div>
+          <div class="value">${data.chargeableWeight} kg${data.isConverted ? ' (QĐ)' : ''}</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-title">Chi tiết cước phí</div>
+      
+      <div class="detail-row">
+        <span class="label">Cước cơ bản (Nấc ${data.weightTier})</span>
+        <span class="value">${Calculator.formatVND(data.baseCost)}</span>
+      </div>`;
+
+    if (data.surcharges.length > 0) {
+      html += `<div class="divider"></div><div class="section-title">Phụ phí</div><div class="surcharge-list">`;
+      for (const s of data.surcharges) {
+        html += `<div class="surcharge-item">
+          <span class="name">${s.name}${s.percent ? ` (+${s.percent}%)` : ''}</span>
+          <span class="amount">+${Calculator.formatVND(s.amount)}</span>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `
+      <div class="divider"></div>
+      <div class="detail-row">
+        <span class="label">Tạm tính</span>
+        <span class="value">${Calculator.formatVND(data.subtotal)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Phụ phí xăng dầu (23%)</span>
+        <span class="value">+${Calculator.formatVND(data.fuel)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">VAT (10%)</span>
+        <span class="value">+${Calculator.formatVND(data.vat)}</span>
+      </div>
+      <div class="detail-row total">
+        <span class="label">💰 TỔNG CỘNG</span>
+        <span class="value">${Calculator.formatVND(data.total)}</span>
+      </div>`;
+
+    html += `<div style="margin-top:12px;padding:8px 12px;background:var(--bg-glass);border-radius:8px;font-size:12px;color:var(--text-muted);">
+      💡 Cước phí cầu đường, bến bãi (nếu có) thanh toán theo phát sinh thực tế.
+    </div>`;
+
     container.innerHTML = html;
     document.getElementById('resultEmpty').style.display = 'none';
     document.getElementById('resultSummary').classList.add('show');
@@ -430,13 +432,10 @@ const App = {
     if (!f.province) { alert('Vui lòng chọn tỉnh/TP trả hàng'); return; }
     if (!f.weight || f.weight <= 0) { alert('Vui lòng nhập trọng lượng'); return; }
 
-    const weightPerPiece = f.weight / f.pieces;
-    const oversized = Calculator.isOversized(f.dimL, f.dimW, f.dimH);
+    const oversized = f.isOversized;
     let chargeableWeight = f.weight;
-    if (f.dimL > 0 && f.dimW > 0 && f.dimH > 0) {
-      chargeableWeight = Calculator.calcChargeableWeight(
-        f.weight, f.dimL, f.dimW, f.dimH, !f.isNonStackable, oversized
-      );
+    if (f.cbm > 0) {
+      chargeableWeight = Calculator.calcChargeableWeight(f.weight, f.cbm);
     }
 
     let deliveryFee = 0;

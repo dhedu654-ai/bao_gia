@@ -3,14 +3,15 @@ let currentRegion = 'vung1';
 let currentUserRole = null; // 'admin' (xem) or 'boss' (sửa)
 
 const TABS = [
-  { id: 'g1', label: '🚀 G1 - Đúng Giờ' },
-  { id: 'g2', label: '🛡️ G2 - Đảm Bảo' },
-  { id: 'g3', label: '💰 G3 - Tiết Kiệm' },
-  { id: 'g4', label: '🚛 G4 - Bao Xe' },
-  { id: 'delivery', label: '📍 Phí Giao Nhận' },
-  { id: 'surcharges', label: '⚙️ Phụ Phí Chung' },
+  { id: 'g1', label: 'G1 - Đúng Giờ', icon: '🚀' },
+  { id: 'g2', label: 'G2 - Đảm Bảo', icon: '🛡️' },
+  { id: 'g3', label: 'G3 - Tiết Kiệm', icon: '💰' },
+  { id: 'g4', label: 'G4 - Bao Xe', icon: '🚛' },
+  { id: 'delivery', label: 'Phí Giao Nhận', icon: '📍' },
+  { id: 'surcharges', label: 'Phụ Phí Chung', icon: '⚙️' },
 ];
 
+// ================= LOAD & INIT =================
 async function loadData() {
   try {
     const { data, error } = await supabase.from('configs').select('data').eq('id', 1).single();
@@ -21,21 +22,25 @@ async function loadData() {
   } catch (err) {
     console.warn("Dùng dữ liệu file mẫu do lỗi Cloud hoặc bảng trống.");
   }
-  
-  // Set Effective Date
-  const dateInput = document.getElementById('effectiveDateInput');
-  if (dateInput) {
-    dateInput.value = PRICING_DATA.effectiveDate || new Date().toLocaleDateString('vi-VN');
-    dateInput.addEventListener('change', (e) => {
-      PRICING_DATA.effectiveDate = e.target.value;
-    });
-  }
-
   renderUI();
 }
 
 function renderUI() {
   renderSidebar();
+
+  const hideToolbar = ['delivery', 'surcharges'].includes(currentTab);
+  document.getElementById('pageToolbar').style.display = hideToolbar ? 'none' : 'block';
+
+  if (!hideToolbar) {
+    if (currentTab === 'g4') {
+      document.getElementById('filterBar').style.display = 'none';
+      document.querySelector('.btn-add-route').innerText = '⊕ Thêm loại xe';
+    } else {
+      document.getElementById('filterBar').style.display = 'flex';
+      document.querySelector('.btn-add-route').innerText = '⊕ Thêm tuyến đường mới';
+    }
+  }
+
   renderContent();
 }
 
@@ -43,18 +48,21 @@ function renderSidebar() {
   const menu = document.getElementById('navMenu');
   menu.innerHTML = TABS.map(tab => `
     <li class="nav-item ${currentTab === tab.id ? 'active' : ''}" onclick="switchTab('${tab.id}')">
-      ${tab.label}
+      <span class="icon">${tab.icon}</span> <span>${tab.label}</span>
     </li>
   `).join('');
 }
 
 function switchTab(tabId) {
   currentTab = tabId;
-  const hideRegion = ['delivery', 'surcharges'].includes(tabId);
-  document.getElementById('regionTabs').style.display = hideRegion ? 'none' : 'flex';
+  const si = document.getElementById('searchInput');
+  if (si) si.value = '';
+  const fz = document.getElementById('filterZone');
+  if (fz) fz.value = '';
   renderUI();
 }
 
+// Region tab click handlers
 document.querySelectorAll('.region-btn').forEach(btn => {
   btn.addEventListener('click', (e) => {
     document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
@@ -64,10 +72,32 @@ document.querySelectorAll('.region-btn').forEach(btn => {
   });
 });
 
+// Add route / vehicle
+window.addRouteConfig = function() {
+  if (['g1', 'g2', 'g3'].includes(currentTab)) {
+    const pkgData = PRICING_DATA[currentTab][currentRegion];
+    if (!pkgData) return;
+    pkgData.routes.unshift({
+      zone: 1, province: "Tỉnh mới", code: "NEW", area: "", deliveryTime: "", min: 0,
+      prices: new Array(pkgData.weightTiers ? pkgData.weightTiers.length : 5).fill(0)
+    });
+  } else if (currentTab === 'g4') {
+    const pkgData = PRICING_DATA.g4[currentRegion];
+    if (!pkgData) return;
+    const newId = (pkgData.vehicles[pkgData.vehicles.length - 1]?.id || 0) + 1;
+    pkgData.vehicles.unshift({
+      id: newId, name: "Xe mới", size: "", loadTime: "60 phút", basePrice: 0,
+      kmPrices: [0, 0, 0, 0, 0, 0], waitFee: 0, extraPoint: 0
+    });
+  }
+  renderContent();
+};
+
+// ================= RENDER =================
 function renderContent() {
   const container = document.getElementById('tableContainer');
   container.innerHTML = '';
-  
+
   if (['g1', 'g2', 'g3'].includes(currentTab)) {
     renderStandardPackageTable(container, currentTab, currentRegion);
   } else if (currentTab === 'g4') {
@@ -79,45 +109,46 @@ function renderContent() {
   }
 }
 
-// ================= RENDER LOGICS =================
+// Format tiền
+function fMoney(num) {
+  if (!num && num !== 0) return '0';
+  return new Intl.NumberFormat('vi-VN').format(num);
+}
 
-// Hàm helper để tạo input gắn reference trực tiếp đến Object Data
-function createInput(obj, key, isNumber = false) {
+function createInput(obj, key, isNumber, leftAlign) {
   const input = document.createElement('input');
-  input.type = isNumber ? 'text' : 'text'; // dùng text để dễ gõ hơn, parse sau
-  input.className = `cell-input ${isNumber ? 'number' : ''}`;
-  input.value = obj[key] !== undefined ? obj[key] : '';
-  
+  input.type = 'text';
+  input.className = `cell-input ${isNumber ? 'number' : ''} ${leftAlign ? 'left' : ''}`;
+
+  if (isNumber) {
+    input.value = obj[key] ? fMoney(obj[key]) : '0';
+  } else {
+    input.value = obj[key] !== undefined ? obj[key] : '';
+  }
+
   input.addEventListener('change', (e) => {
     let val = e.target.value;
     if (isNumber) {
+      val = val.replace(/[^0-9.\-]+/g, "");
       val = parseFloat(val) || 0;
+      input.value = fMoney(val);
     }
     obj[key] = val;
   });
   return input;
 }
 
-// Bảng G1, G2, G3
+// ===== Bảng G1, G2, G3 =====
 function renderStandardPackageTable(container, pkgId, regionId) {
   const pkgData = PRICING_DATA[pkgId][regionId];
-  if (!pkgData) return;
+  if (!pkgData) { container.innerHTML = '<p style="color:#94a3b8;text-align:center;">Không có dữ liệu cho vùng này.</p>'; return; }
 
-  const btnAdd = document.createElement('button');
-  btnAdd.className = 'btn btn-add';
-  btnAdd.innerText = '➕ Thêm tuyến đường mới';
-  btnAdd.onclick = () => {
-    pkgData.routes.push({
-      zone: 1, province: "Tỉnh Mới", code: "NEW", area: "", deliveryTime: "", min: 0,
-      prices: new Array(pkgData.weightTiers.length).fill(0)
-    });
-    renderContent();
-  };
-  container.appendChild(btnAdd);
+  const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const filterZone = document.getElementById('filterZone')?.value || '';
 
   const table = document.createElement('table');
   table.className = 'data-table';
-  
+
   // Header
   const trHead = document.createElement('tr');
   const theads = ['Gỡ', 'Vùng', 'Tỉnh', 'Mã', 'Khu vực', 'TG Giao', 'Phí Min', ...pkgData.weightTiers];
@@ -130,167 +161,224 @@ function renderStandardPackageTable(container, pkgId, regionId) {
 
   // Rows
   pkgData.routes.forEach((route, idx) => {
+    if (filterZone && route.zone.toString() !== filterZone) return;
+    if (searchTerm) {
+      const txt = ((route.province || '') + (route.code || '') + (route.area || '')).toLowerCase();
+      if (!txt.includes(searchTerm)) return;
+    }
+
     const tr = document.createElement('tr');
-    
-    // Del btn
+
+    // Delete button
     const tdDel = document.createElement('td');
     const btnDel = document.createElement('button');
-    btnDel.className = 'btn-remove'; btnDel.innerText = '×';
-    btnDel.onclick = () => { if(confirm('Xóa tuyến này?')) { pkgData.routes.splice(idx, 1); renderContent(); } };
+    btnDel.className = 'btn-remove';
+    btnDel.innerHTML = '&times;';
+    btnDel.onclick = () => { if (confirm('Xóa tuyến này?')) { pkgData.routes.splice(idx, 1); renderContent(); } };
     tdDel.appendChild(btnDel);
     tr.appendChild(tdDel);
 
-    ['zone', 'province', 'code', 'area'].forEach(k => {
+    // Zone, Province, Code, Area
+    [
+      { key: 'zone', num: false, left: false },
+      { key: 'province', num: false, left: true },
+      { key: 'code', num: false, left: false },
+      { key: 'area', num: false, left: true }
+    ].forEach(col => {
       const td = document.createElement('td');
-      td.appendChild(createInput(route, k, k==='zone'));
+      td.appendChild(createInput(route, col.key, col.num, col.left));
       tr.appendChild(td);
     });
 
+    // Delivery time
     const timeKey = route.time !== undefined ? 'time' : 'deliveryTime';
     const tdTime = document.createElement('td');
-    tdTime.appendChild(createInput(route, timeKey));
+    tdTime.appendChild(createInput(route, timeKey, false, false));
     tr.appendChild(tdTime);
 
+    // Min price
     const tdMin = document.createElement('td');
-    tdMin.appendChild(createInput(route, 'min', true));
+    const inpMin = createInput(route, 'min', true, false);
+    inpMin.style.fontWeight = 'bold';
+    inpMin.style.color = '#000';
+    tdMin.appendChild(inpMin);
     tr.appendChild(tdMin);
 
+    // Price tiers
     route.prices.forEach((p, pIdx) => {
       const td = document.createElement('td');
       const inp = document.createElement('input');
       inp.className = 'cell-input number';
-      inp.value = p;
-      inp.addEventListener('change', (e) => { route.prices[pIdx] = parseFloat(e.target.value) || 0; });
+      inp.value = p ? fMoney(p) : '0';
+      inp.addEventListener('change', (e) => {
+        let val = e.target.value.replace(/[^0-9.\-]+/g, "");
+        route.prices[pIdx] = parseFloat(val) || 0;
+        inp.value = fMoney(route.prices[pIdx]);
+      });
       td.appendChild(inp);
       tr.appendChild(td);
     });
 
     table.appendChild(tr);
   });
-  
+
   container.appendChild(table);
 }
 
-// Bảng G4 Bao xe
+// ===== Bảng G4 =====
 function renderG4Table(container, regionId) {
   const pkgData = PRICING_DATA.g4[regionId];
-  if (!pkgData) return;
-
-  const btnAdd = document.createElement('button');
-  btnAdd.className = 'btn btn-add';
-  btnAdd.innerText = '➕ Thêm loại xe';
-  btnAdd.onclick = () => {
-    const newId = (pkgData.vehicles[pkgData.vehicles.length-1]?.id || 0) + 1;
-    pkgData.vehicles.push({
-      id: newId, name: "Xe mới", size: "", loadTime: "60 phút", basePrice: 0,
-       kmPrices: [0,0,0,0,0,0], waitFee: 0, extraPoint: 0
-    });
-    renderContent();
-  };
-  container.appendChild(btnAdd);
+  if (!pkgData) { container.innerHTML = '<p style="color:#94a3b8;text-align:center;">Không có dữ liệu.</p>'; return; }
 
   const table = document.createElement('table');
   table.className = 'data-table';
-  
+
   const trHead = document.createElement('tr');
-  const theads = ['Gỡ', 'ID', 'Loại xe', 'Kích thước', 'TG Bốc', 'Base Price (10km)', ...pkgData.kmTiers.slice(1), 'Phí Chờ', 'Phí Thêm Điểm'];
+  const theads = ['Gỡ', 'ID', 'Loại xe', 'Kích thước', 'TG Bốc', 'Base (10km)', ...pkgData.kmTiers.slice(1), 'Phí Chờ', 'Thêm Điểm'];
   theads.forEach(t => { const th = document.createElement('th'); th.innerText = t; trHead.appendChild(th); });
   table.appendChild(trHead);
 
   pkgData.vehicles.forEach((v, idx) => {
     const tr = document.createElement('tr');
-    
+
     const tdDel = document.createElement('td');
     const btnDel = document.createElement('button');
-    btnDel.className = 'btn-remove'; btnDel.innerText = '×';
-    btnDel.onclick = () => { if(confirm('Xóa xe này?')) { pkgData.vehicles.splice(idx, 1); renderContent(); } };
+    btnDel.className = 'btn-remove'; btnDel.innerHTML = '&times;';
+    btnDel.onclick = () => { if (confirm('Xóa xe này?')) { pkgData.vehicles.splice(idx, 1); renderContent(); } };
     tdDel.appendChild(btnDel);
     tr.appendChild(tdDel);
 
     ['id', 'name', 'size', 'loadTime', 'basePrice'].forEach(k => {
       const td = document.createElement('td');
-      td.appendChild(createInput(v, k, ['id','basePrice'].includes(k)));
+      td.appendChild(createInput(v, k, ['id', 'basePrice'].includes(k), !['id', 'basePrice'].includes(k)));
       tr.appendChild(td);
     });
 
-    // skip index 0
-    for(let i=1; i<v.kmPrices.length; i++) {
-        const td = document.createElement('td');
-        const inp = document.createElement('input');
-        inp.className = 'cell-input number';
-        inp.value = v.kmPrices[i];
-        inp.addEventListener('change', (e) => { v.kmPrices[i] = parseFloat(e.target.value) || 0; });
-        td.appendChild(inp);
-        tr.appendChild(td);
+    for (let i = 1; i < v.kmPrices.length; i++) {
+      const td = document.createElement('td');
+      const inp = document.createElement('input');
+      inp.className = 'cell-input number';
+      inp.value = fMoney(v.kmPrices[i]);
+      inp.addEventListener('change', (e) => {
+        v.kmPrices[i] = parseFloat(e.target.value.replace(/[^0-9.\-]+/g, "")) || 0;
+        inp.value = fMoney(v.kmPrices[i]);
+      });
+      td.appendChild(inp);
+      tr.appendChild(td);
     }
 
     ['waitFee', 'extraPoint'].forEach(k => {
       const td = document.createElement('td');
-      td.appendChild(createInput(v, k, true));
+      td.appendChild(createInput(v, k, true, false));
       tr.appendChild(td);
     });
 
     table.appendChild(tr);
   });
-  
+
   container.appendChild(table);
 }
 
-// Bảng Giao nhận
+// ===== Bảng Giao nhận =====
 function renderDeliveryTable(container) {
   const areas = PRICING_DATA.deliveryFee.areas;
   const table = document.createElement('table');
   table.className = 'data-table';
-  
+
   const trHead = document.createElement('tr');
-  const theads = ['Tên', 'Khu vực', 'Xe 1T', 'Xe 2T', 'Xe 3.5T', 'Xe 5T'];
-  theads.forEach(t => { const th = document.createElement('th'); th.innerText = t; trHead.appendChild(th); });
+  ['Tên', 'Khu vực', 'Xe 1T', 'Xe 2T', 'Xe 3.5T', 'Xe 5T'].forEach(t => {
+    const th = document.createElement('th'); th.innerText = t; trHead.appendChild(th);
+  });
   table.appendChild(trHead);
 
   areas.forEach((a) => {
     const tr = document.createElement('tr');
-    
     ['name', 'area'].forEach(k => {
       const td = document.createElement('td');
-      td.appendChild(createInput(a, k));
+      td.appendChild(createInput(a, k, false, true));
       tr.appendChild(td);
     });
-
     ['xe1t', 'xe2t', 'xe35t', 'xe5t'].forEach(k => {
       const td = document.createElement('td');
-      td.appendChild(createInput(a.fees, k, true));
+      td.appendChild(createInput(a.fees, k, true, false));
       tr.appendChild(td);
     });
-
     table.appendChild(tr);
   });
   container.appendChild(table);
 }
 
-// Cấu hình chung
+// ===== Phụ Phí Chung =====
 function renderSurcharges(container) {
   const sur = PRICING_DATA.surcharges;
   const grid = document.createElement('div');
   grid.className = 'config-grid';
 
+  // Cấu hình chung
+  const card0 = document.createElement('div');
+  card0.className = 'config-card';
+  card0.innerHTML = `<h3>🗓️ Cấu hình chung</h3>
+    <div class="form-group"><label>Ngày hiệu lực báo giá</label></div>
+  `;
+  card0.querySelectorAll('.form-group')[0].appendChild(createInput(PRICING_DATA, 'effectiveDate', false, false));
+  grid.appendChild(card0);
+
+  // Phụ phí nền
   const card1 = document.createElement('div');
   card1.className = 'config-card';
-  card1.innerHTML = `<h3>Phụ phí nền</h3>
-    <div class="form-group"><label>VAT (%)</label></div>
-    <div class="form-group"><label>Phụ phí xăng dầu (%)</label></div>
-    <div class="form-group"><label>Phụ phí quá khổ (%)</label></div>
-    <div class="form-group"><label>Phụ phí hóa chất (%)</label></div>
+  card1.innerHTML = `<h3>⚡ Phụ phí nền</h3>
+    <div class="form-group"><label>VAT (tỷ lệ, VD: 0.1 = 10%)</label></div>
+    <div class="form-group"><label>Phụ phí xăng dầu (VD: 0.23 = 23%)</label></div>
+    <div class="form-group"><label>Phụ phí ngoại thành (VD: 0.3 = 30%)</label></div>
   `;
   const inputs1 = card1.querySelectorAll('.form-group');
-  inputs1[0].appendChild(createInput(sur, 'vat', true));
-  inputs1[1].appendChild(createInput(sur, 'fuel', true));
-  // These are usually nested in notes, let's keep it simple and just do the global ones
+  inputs1[0].appendChild(createInput(sur, 'vat', false, false));
+  inputs1[1].appendChild(createInput(sur, 'fuel', false, false));
+  inputs1[2].appendChild(createInput(sur, 'suburbanExtraPercent', false, false));
   grid.appendChild(card1);
+
+  // COD
+  const codData = PRICING_DATA.specialFees.cod;
+  const card2 = document.createElement('div');
+  card2.className = 'config-card';
+  card2.innerHTML = `<h3>💵 Thu hộ COD</h3>
+    <div class="form-group"><label>Dưới 300k</label></div>
+    <div class="form-group"><label>Từ 300k - 600k</label></div>
+    <div class="form-group"><label>Từ 600k - 1tr</label></div>
+  `;
+  const inputs2 = card2.querySelectorAll('.form-group');
+  inputs2[0].appendChild(createInput(codData.tiers[0], 'fee', true, false));
+  inputs2[1].appendChild(createInput(codData.tiers[1], 'fee', true, false));
+  inputs2[2].appendChild(createInput(codData.tiers[2], 'fee', true, false));
+  grid.appendChild(card2);
+
+  // Kiểm đếm
+  const countData = PRICING_DATA.specialFees.counting;
+  const card3 = document.createElement('div');
+  card3.className = 'config-card';
+  card3.innerHTML = `<h3>📦 Phí kiểm đếm</h3>
+    <div class="form-group"><label>Phí cơ bản (đến ${countData.baseQty} SP)</label></div>
+    <div class="form-group"><label>Phí mỗi SP phát sinh thêm</label></div>
+  `;
+  const inputs3 = card3.querySelectorAll('.form-group');
+  inputs3[0].appendChild(createInput(countData, 'baseFee', true, false));
+  inputs3[1].appendChild(createInput(countData, 'extraPerItem', true, false));
+  grid.appendChild(card3);
+
+  // Bảo hiểm
+  const insData = PRICING_DATA.specialFees.insurance;
+  const card4 = document.createElement('div');
+  card4.className = 'config-card';
+  card4.innerHTML = `<h3>🛡️ Bảo hiểm hàng hóa</h3>
+    <div class="form-group"><label>Tỷ lệ bảo hiểm (VD: 0.0008 = 0.08%)</label></div>
+  `;
+  card4.querySelectorAll('.form-group')[0].appendChild(createInput(insData, 'rate', false, false));
+  grid.appendChild(card4);
 
   container.appendChild(grid);
 }
 
-// ================= LƯU DATA =================
+// ================= SAVE =================
 async function saveData() {
   if (currentUserRole !== 'boss') {
     alert("❌ Chỉ Giám đốc mới có quyền lưu cấu hình!");
@@ -305,24 +393,27 @@ async function saveData() {
   } catch (err) {
     alert("❌ Lỗi: " + err.message);
   } finally {
-    btn.innerText = '💾 Lưu Lên Cloud';
+    btn.innerText = '💾 Lưu Bảng Giá Lên Máy Chủ';
   }
 }
 
-// ================= AUTHENTICATION =================
+// ================= AUTH =================
 function login() {
   const pwd = document.getElementById('authPassword').value;
   const err = document.getElementById('authError');
   if (pwd === 'admin') {
     currentUserRole = 'admin';
     document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('roleBadge').style.display = 'block';
     document.getElementById('roleBadge').innerText = '👀 Quyền Xem';
     document.getElementById('roleBadge').className = 'auth-role-badge admin';
-    document.getElementById('btnSave').style.display = 'none'; // Ẩn nút lưu
-    document.querySelector('label[for="importExcelInput"]').style.display = 'none'; // Ẩn nút nhập
+    document.getElementById('btnSave').style.display = 'none';
+    const importLabel = document.querySelector('label[for="importExcelInput"]');
+    if (importLabel) importLabel.style.display = 'none';
   } else if (pwd === 'boss') {
     currentUserRole = 'boss';
     document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('roleBadge').style.display = 'block';
     document.getElementById('roleBadge').innerText = '👑 Giám Đốc';
     document.getElementById('roleBadge').className = 'auth-role-badge';
   } else {
@@ -330,86 +421,57 @@ function login() {
   }
 }
 
-// ================= EXCEL EXPORT / IMPORT =================
+// ================= EXCEL =================
 function exportExcel() {
-  if (typeof XLSX === 'undefined') {
-    alert('Thư viện Excel chưa được tải, vui lòng thử lại sau.');
-    return;
-  }
-  
+  if (typeof XLSX === 'undefined') { alert('Thư viện Excel chưa tải xong.'); return; }
   const wb = XLSX.utils.book_new();
-
-  // Export G1/G2/G3
   ['g1', 'g2', 'g3'].forEach(pkg => {
     const sheetData = [];
     sheetData.push(["Vùng", "Tỉnh", "Khu vực", "TG Giao", "Phí Min", ...PRICING_DATA[pkg].vung1.weightTiers]);
-    
-    // Vùng 1
     PRICING_DATA[pkg].vung1.routes.forEach(r => {
-      sheetData.push(["Từ HCM", r.province, r.area, r.time || r.deliveryTime || "", r.min || 0, ...r.prices]);
+      sheetData.push(["Từ HCM", r.province, r.area, r.time || r.deliveryTime || "", r.min, ...r.prices]);
     });
-    // Vùng 2
-    if(PRICING_DATA[pkg].vung2) {
+    if (PRICING_DATA[pkg].vung2) {
       PRICING_DATA[pkg].vung2.routes.forEach(r => {
-        sheetData.push(["Từ ĐN", r.province, r.area, r.time || r.deliveryTime || "", r.min || 0, ...r.prices]);
+        sheetData.push(["Từ ĐN", r.province, r.area, r.time || r.deliveryTime || "", r.min, ...r.prices]);
       });
     }
-
-    const ws = XLSX.utils.aoa_to_sheet(sheetData);
-    XLSX.utils.book_append_sheet(wb, ws, pkg.toUpperCase());
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sheetData), pkg.toUpperCase());
   });
-
   XLSX.writeFile(wb, `BangGia_NPV_${new Date().getTime()}.xlsx`);
 }
 
 function importExcel(e) {
-  if (currentUserRole !== 'boss') {
-    alert("❌ Chỉ Giám đốc mới có quyền Nhập file Excel!");
-    e.target.value = "";
-    return;
-  }
-
+  if (currentUserRole !== 'boss') { alert("❌ Chỉ Giám đốc thao tác!"); e.target.value = ""; return; }
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = (evt) => {
     try {
       const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, {type: 'array'});
-
-      // Xử lý đơn giản cho G1 làm ví dụ (Cần map logic phức tạp nếu muốn import chuẩn hoàn toàn)
+      const workbook = XLSX.read(data, { type: 'array' });
       const g1Sheet = workbook.Sheets['G1'];
-      if(g1Sheet) {
-        const json = XLSX.utils.sheet_to_json(g1Sheet, {header: 1});
-        // Bỏ header (dòng 0)
-        let newRoutesVung1 = [];
-        let newRoutesVung2 = [];
-        for(let i=1; i<json.length; i++) {
+      if (g1Sheet) {
+        const json = XLSX.utils.sheet_to_json(g1Sheet, { header: 1 });
+        let newRoutesVung1 = [], newRoutesVung2 = [];
+        for (let i = 1; i < json.length; i++) {
           let row = json[i];
-          if(!row || row.length < 5) continue;
+          if (!row || row.length < 5) continue;
           let rData = {
-            zone: row[0].includes('HCM') ? 1 : 2,
-            province: row[1],
-            code: "",
-            area: row[2] || "",
-            deliveryTime: row[3] || "",
-            min: parseFloat(row[4]) || 0,
+            zone: row[0]?.toString().includes('HCM') ? 1 : 2,
+            province: row[1], code: "", area: row[2] || "",
+            deliveryTime: row[3] || "", min: parseFloat(row[4]) || 0,
             prices: row.slice(5).map(v => parseFloat(v) || 0)
           };
-          if(rData.zone === 1) newRoutesVung1.push(rData);
+          if (rData.zone === 1) newRoutesVung1.push(rData);
           else newRoutesVung2.push(rData);
         }
-        
-        if(newRoutesVung1.length > 0) PRICING_DATA.g1.vung1.routes = newRoutesVung1;
-        if(newRoutesVung2.length > 0 && PRICING_DATA.g1.vung2) PRICING_DATA.g1.vung2.routes = newRoutesVung2;
+        if (newRoutesVung1.length) PRICING_DATA.g1.vung1.routes = newRoutesVung1;
+        if (newRoutesVung2.length && PRICING_DATA.g1.vung2) PRICING_DATA.g1.vung2.routes = newRoutesVung2;
       }
-      
-      alert("✅ Nhập cấu hình thành công vào hệ thống tạm. Hãy ấn 'Lưu Lên Cloud' để áp dụng!");
+      alert("✅ Nhập cấu hình thành công tạm thời. Hãy ấn 'Lưu Bảng Giá' để áp dụng!");
       renderContent();
-    } catch(err) {
-      alert("❌ Lỗi đọc file Excel: " + err.message);
-    }
+    } catch (err) { alert("❌ Lỗi đọc file: " + err.message); }
   };
   reader.readAsArrayBuffer(file);
   e.target.value = "";

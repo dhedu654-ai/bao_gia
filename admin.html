@@ -14,19 +14,19 @@
     <div class="auth-card">
       <div class="auth-icon">🔒</div>
       <h2>Đăng nhập Hệ thống</h2>
-      <p>Nhập mật khẩu để truy cập vào Bảng quản trị giá NPV Logistics.</p>
+      <p>Nhập mật khẩu để truy cập vào Bảng quản trị NPV Logistics.</p>
       
       <div class="auth-input-group">
         <input type="password" id="authPassword" placeholder="Nhập mật khẩu..." onkeypress="if(event.key === 'Enter') login()">
-        <button class="btn btn-save" onclick="login()">Đăng nhập</button>
+        <button class="btn btn-primary-bg" onclick="login()">Đăng nhập</button>
       </div>
       <div id="authError" style="color:red; font-size:13px; margin-top:10px; display:none;">Sai mật khẩu!</div>
       
       <div class="auth-hints">
         <p><i>Gợi ý:</i></p>
         <ul style="text-align:left; font-size:12px; margin-top:5px; padding-left:20px; color:#64748b;">
-          <li>Mật khẩu Hành chính: <b>admin</b> (Chỉ xem dữ liệu, không lưu được)</li>
-          <li>Mật khẩu Giám đốc: <b>boss</b> (Được lưu dữ liệu, cấu hình)</li>
+          <li>Mật khẩu Hành chính: <b>admin</b> (Chỉ xem)</li>
+          <li>Mật khẩu Giám đốc: <b>boss</b> (Được lưu)</li>
         </ul>
       </div>
       
@@ -35,44 +35,70 @@
       </div>
     </div>
   </div>
-  <div class="header">
-    <div class="header-left">
-      <h1>Cài Đặt Bảng Giá</h1>
-      <p>Sửa đổi trực tiếp trong các ô và ấn nút Lưu để cập nhật tức thì trên toàn hệ thống.</p>
-      <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
-        <label style="font-size: 13px; font-weight: 600; color: #475569;">Ngày hiệu lực:</label>
-        <input type="text" id="effectiveDateInput" placeholder="Ví dụ: 15/03/2026" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; width: 150px;">
-      </div>
-    </div>
-    <div class="actions" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;">
-      <a href="index.html" class="btn" style="background: #f1f5f9; color: #475569; text-decoration: none; padding: 10px 16px; font-size: 14px; border: 1px solid #cbd5e1;">Theo Dõi Báo Giá</a>
-      <div class="auth-role-badge" id="roleBadge">Chế độ Xem</div>
-      <button class="btn" style="background:#10b981; color:white; border:none;" onclick="exportExcel()">⬇️ Xuất Excel</button>
-      <label class="btn" style="background:#f59e0b; color:white; border:none; cursor:pointer;" for="importExcelInput">
-        ⬆️ Nhập Excel
-        <input type="file" id="importExcelInput" accept=".xlsx, .xls" style="display: none;" onchange="importExcel(event)">
-      </label>
-      <button class="btn btn-save" id="btnSave" onclick="saveData()">💾 Lưu Lên Cloud</button>
-    </div>
-  </div>
 
   <div class="layout">
     <div class="sidebar">
+      <div class="sidebar-logo">
+        <span class="icon" style="font-size: 24px; color: #2563eb;">🚛</span> <span class="text" style="font-size: 18px; font-weight: 700; color: #1e3a8a;">NPV Logistics</span>
+      </div>
       <ul class="nav-menu" id="navMenu">
         <!-- JS VẼ TABS VÀO ĐÂY -->
       </ul>
+      <div class="sidebar-footer">
+         <div class="avatar">AD</div>
+         <div class="admin-info">
+           <div class="admin-name">Admin NPV</div>
+           <div class="admin-email">admin@npv.com</div>
+         </div>
+      </div>
     </div>
     
     <div class="main-content">
-      <!-- Vùng chọn (Vùng 1 / Vùng 2) -->
-      <div class="region-tabs" id="regionTabs" style="display: none;">
-        <button class="region-btn active" data-region="vung1">Từ Vùng 1 (Hồ Chí Minh)</button>
-        <button class="region-btn" data-region="vung2">Từ Vùng 2 (Đà Nẵng)</button>
+      <div class="header">
+        <div class="header-titles">
+          <h1>Cài Đặt Bảng Giá</h1>
+          <p>Sửa đổi trực tiếp trong các ô và ấn nút Lưu để cập nhật tức thì.</p>
+        </div>
+        <div class="actions">
+          <div class="auth-role-badge" id="roleBadge" style="display:none;">Chế độ Xem</div>
+          <button class="btn btn-save" id="btnSave" onclick="saveData()">💾 Lưu Bảng Giá Lên Máy Chủ</button>
+        </div>
       </div>
 
       <div class="editor-container">
+        <!-- Toolbar for Table Pages -->
+        <div id="pageToolbar" class="page-toolbar">
+          <div class="layout-toolbar">
+            <div class="region-tabs" id="regionTabs">
+              <button class="region-btn active" data-region="vung1">Từ Vùng 1 (Hồ Chí Minh)</button>
+              <button class="region-btn" data-region="vung2">Từ Vùng 2 (Đà Nẵng)</button>
+            </div>
+            <div class="toolbar-actions" id="toolbarActions">
+              <button class="btn btn-outline" style="cursor: pointer;" onclick="exportExcel()">⬇️ Xuất Excel</button>
+              <label class="btn btn-outline" style="cursor: pointer;" for="importExcelInput">
+                ⬆️ Nhập từ Excel
+                <input type="file" id="importExcelInput" accept=".xlsx, .xls" style="display: none;" onchange="importExcel(event)">
+              </label>
+              <button class="btn btn-primary-bg btn-add-route" onclick="window.addRouteConfig()">⊕ Thêm tuyến đường mới</button>
+            </div>
+          </div>
+
+          <div class="filter-bar" id="filterBar">
+            <div class="search-input">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Tìm kiếm theo tỉnh, mã hoặc khu vực..." id="searchInput" oninput="renderContent()">
+            </div>
+            <div class="filter-dropdowns">
+                <label>LỌC THEO:</label>
+                <select id="filterZone" onchange="renderContent()"><option value="">Tất cả Vùng</option><option value="1">Vùng 1</option><option value="2">Vùng 2</option><option value="3">Vùng 3</option><option value="4">Vùng 4</option></select>
+                <!-- Dùng text input ẩn làm filter tỉnh cho nhanh -->
+                <button class="btn-clear-filter" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterZone').value=''; renderContent();">✕ Xóa lọc</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Khung chứa bảng dữ liệu động -->
-        <div id="tableContainer">
+        <div id="tableContainer" class="table-wrapper">
           <div class="loading">Đang tải dữ liệu...</div>
         </div>
       </div>
