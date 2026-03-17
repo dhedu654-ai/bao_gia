@@ -627,9 +627,9 @@ const App = {
     
     // Collect selected export options
     const expOpts = {
-      includeDelivery: document.getElementById('expDeliveryFee').checked,
-      includeCBM: document.getElementById('expCBMPrice').checked,
-      includeNoVat: document.getElementById('expNoVat').checked,
+      includeDelivery: document.getElementById('expIncludeDelivery').checked,
+      includeCBM: document.getElementById('expCBM').checked,
+      includeNoVat: document.getElementById('expNoneVat').checked,
       includeOversized: document.getElementById('expOversized')?.checked || false,
       includeChemical: document.getElementById('expChemical').checked,
       includeInsurance: document.getElementById('expInsurance').checked,
