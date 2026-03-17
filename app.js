@@ -387,6 +387,7 @@ const App = {
     container.innerHTML = html;
     document.getElementById('resultEmpty').style.display = 'none';
     document.getElementById('resultSummary').classList.add('show');
+    const wes = document.getElementById('wordExportSection'); if(wes) wes.style.display = 'block';
   },
 
   renderResult(data) {
@@ -498,6 +499,7 @@ const App = {
     container.innerHTML = html;
     document.getElementById('resultEmpty').style.display = 'none';
     document.getElementById('resultSummary').classList.add('show');
+    const wes2 = document.getElementById('wordExportSection'); if(wes2) wes2.style.display = 'block';
   },
 
   compare() {
@@ -611,6 +613,7 @@ const App = {
     document.getElementById('routeWarningBox').style.display = 'none';
     document.getElementById('resultEmpty').style.display = 'block';
     document.getElementById('resultSummary').classList.remove('show');
+    const wesR = document.getElementById('wordExportSection'); if(wesR) wesR.style.display = 'none';
     document.getElementById('compareCard').style.display = 'none';
     document.getElementById('cargoSection').style.display = 'block';
     document.getElementById('vehicleSection').classList.remove('show');

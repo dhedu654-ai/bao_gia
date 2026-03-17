@@ -246,20 +246,27 @@
         <div class="result-summary" id="resultSummary">
           <div id="resultContent"></div>
           <!-- Xuất Báo Giá Word -->
-          <div id="wordExportSection" style="display:none; margin-top: 16px; padding: 16px; background:#f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 12px 12px;">
-            <h3 style="margin:0 0 12px 0; font-size:14px; color:#0f172a;">Xuất Báo Giá (.docx)</h3>
-            <div class="checkbox-row" style="margin-bottom: 12px; gap: 8px;">
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expNoneVat" checked> Chưa VAT & Bốc xếp</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expIncludeDelivery" checked> Phí giao hàng tận nơi</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expCBM" checked> Lời thoại tính CBM</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expOversized" checked> Hàng quá khổ</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expChemical" checked> Hóa chất / Chất lỏng</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expInsurance" checked> Phí bảo hiểm</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expWoodenCrate" checked> Phí đóng thùng gỗ</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expCounting" checked> Phí kiểm đếm</label>
-              <label class="checkbox-label" style="font-size:12px; padding:6px 10px;"><input type="checkbox" id="expCOD" checked> Phí thu hộ COD</label>
+          <div id="wordExportSection" style="display:none; margin-top: 16px; padding: 20px; background: linear-gradient(135deg, #f0f9ff, #f8fafc); border-top: 2px solid #1B75BB; border-radius: 0 0 12px 12px;">
+            <h3 style="margin:0 0 16px 0; font-size:15px; color:#0f172a;">📄 Xuất Báo Giá Word</h3>
+            
+            <div style="margin-bottom:14px;">
+              <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:6px;">Tên khách hàng</label>
+              <input type="text" id="exportCustomerName" placeholder="VD: Công ty TNHH ABC" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:13px; box-sizing:border-box;">
             </div>
-            <button class="btn btn-export" onclick="App.exportWord()">
+
+            <label style="display:block; font-size:12px; font-weight:600; color:#475569; margin-bottom:8px;">Chọn điều khoản hiển thị trong báo giá:</label>
+            <div class="checkbox-row" style="margin-bottom: 14px; gap: 6px; flex-wrap:wrap;">
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expNoneVat" checked> Chưa VAT &amp; Bốc xếp</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expIncludeDelivery" checked> Giao hàng tận nơi</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expCBM" checked> Đơn giá CBM</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expOversized"> Hàng quá khổ</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expChemical"> Hóa chất</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expInsurance"> Bảo hiểm</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expWoodenCrate"> Đóng kiện gỗ</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expCounting"> Kiểm đếm</label>
+              <label class="checkbox-label" style="font-size:12px; padding:5px 10px;"><input type="checkbox" id="expCOD"> Thu hộ COD</label>
+            </div>
+            <button class="btn btn-export" onclick="App.exportWord()" style="width:100%; padding:12px; font-size:14px; font-weight:600; background: linear-gradient(135deg, #1B75BB, #2563eb); color:white; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
               📄 Tải file Word Báo Giá
             </button>
           </div>
