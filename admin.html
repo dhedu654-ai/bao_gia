@@ -204,6 +204,91 @@
     </div>
   </div>
 
+  <!-- G4 Vehicle Edit Modal -->
+  <div class="overlay" id="g4Modal" style="display:none; align-items:flex-start; overflow-y:auto; padding: 20px;">
+    <div class="modal-content" style="background:white; border-radius:12px; max-width:650px; width:100%; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.15); position:relative; margin-top: 40px;">
+      <button onclick="closeG4Modal()" style="position:absolute; top:16px; right:16px; background:none; border:none; font-size:24px; cursor:pointer; color:#94a3b8;">&times;</button>
+      <h2 id="g4ModalTitle" style="margin-top:0; color:#0f172a; font-size:20px; border-bottom:1px solid #e2e8f0; padding-bottom:12px; margin-bottom:20px;">Thêm/Sửa Loại Xe G4</h2>
+      
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <input type="hidden" id="modalG4Index">
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+          <div>
+            <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Mã Xe (ID)</label>
+            <input type="number" id="modalG4Id" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Tên Xe</label>
+            <input type="text" id="modalG4Name" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Kích thước</label>
+            <input type="text" id="modalG4Size" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+          <div>
+            <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Thời gian bốc hàng</label>
+            <input type="text" id="modalG4LoadTime" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Phí chờ (VNĐ)</label>
+            <input type="number" id="modalG4WaitFee" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:13px; font-weight:600; color:#475569; margin-bottom:6px;">Phí thêm điểm (VNĐ)</label>
+            <input type="number" id="modalG4ExtraPoint" class="form-control" style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+        </div>
+
+        <div style="background:#f8fafc; padding:16px; border-radius:8px; border:1px solid #e2e8f0;">
+          <h3 style="font-size:14px; margin-top:0; margin-bottom:12px; color:#1e293b;">Bảng Giá Theo Km (VNĐ)</h3>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+             <div>
+                <label style="display:block; font-size:12px; color:#64748b; margin-bottom:4px;">Giá cơ sở (10km đầu)</label>
+                <input type="number" id="modalG4Base" class="form-control" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px; font-weight:bold; color:#1B75BB;">
+             </div>
+             <div>
+                <label style="display:block; font-size:12px; color:#64748b; margin-bottom:4px;">Nấc 1 (10-30km)</label>
+                <input type="number" id="modalG4Km1" class="form-control" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px;">
+             </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;">
+             <div>
+                <label style="display:block; font-size:12px; color:#64748b; margin-bottom:4px;">Nấc 2 (30-50)</label>
+                <input type="number" id="modalG4Km2" class="form-control" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px;">
+             </div>
+             <div>
+                <label style="display:block; font-size:12px; color:#64748b; margin-bottom:4px;">Nấc 3 (50-100)</label>
+                <input type="number" id="modalG4Km3" class="form-control" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px;">
+             </div>
+             <div>
+                <label style="display:block; font-size:12px; color:#64748b; margin-bottom:4px;">Nấc 4 (100-200)</label>
+                <input type="number" id="modalG4Km4" class="form-control" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px;">
+             </div>
+             <div>
+                <label style="display:block; font-size:12px; color:#64748b; margin-bottom:4px;">Nấc 5 (>200)</label>
+                <input type="number" id="modalG4Km5" class="form-control" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:4px;">
+             </div>
+          </div>
+        </div>
+
+        <div style="background:#fffbeb; padding:16px; border-radius:8px; border:1px solid #fde68a;">
+          <label style="display:block; font-size:14px; font-weight:700; color:#b45309; margin-bottom:8px;">📅 Ngày Hiệu Lực Áp Dụng <span style="color:red">*</span></label>
+          <p style="font-size:12px; color:#d97706; margin-top:0; margin-bottom:12px;">Hệ thống sẽ giữ lại phiên bản cũ và tạo phiên bản cước mới bắt đầu từ ngày này.</p>
+          <input type="date" id="modalG4EffectiveDate" class="form-control" style="width:100%; padding:10px; border:1px solid #fcd34d; border-radius:6px; font-weight:600; font-size:15px;">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:8px;">
+          <button type="button" class="btn btn-outline" onclick="closeG4Modal()">Hủy</button>
+          <button type="button" class="btn btn-primary-bg" onclick="saveG4Modal()">💾 Lưu Loại Xe</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Delete Modal -->
   <div class="overlay" id="deleteModal" style="display:none; align-items:flex-start; overflow-y:auto; padding: 20px;">
     <div class="modal-content" style="background:white; border-radius:12px; max-width:450px; width:100%; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.15); margin-top: 100px;">
