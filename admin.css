@@ -50,8 +50,8 @@ body {
 .nav-item:hover { background: #f8fafc; color: #334155; }
 .nav-item.active {
   background: #eff6ff;
-  color: #2563eb;
-  border-right: 3px solid #2563eb;
+  color: #1B75BB;
+  border-right: 3px solid #1B75BB;
   font-weight: 600;
 }
 .nav-item .icon { font-size: 18px; }
@@ -100,12 +100,12 @@ body {
   cursor: pointer; transition: 0.2s; font-size: 14px;
   display: inline-flex; align-items: center; gap: 6px;
 }
-.btn-save { background: #2563eb; color: white; }
+.btn-save { background: #1B75BB; color: white; }
 .btn-save:hover { background: #1d4ed8; }
 .btn-outline { background: white; border: 1px solid #cbd5e1; color: #475569; }
 .btn-outline:hover { background: #f1f5f9; }
-.btn-primary-bg { background: #10b981; color: white; }
-.btn-primary-bg:hover { background: #059669; }
+.btn-primary-bg { background: #4CAF50; color: white; }
+.btn-primary-bg:hover { background: #45a049; }
 
 /* ===== EDITOR CONTAINER ===== */
 .editor-container {
@@ -137,7 +137,7 @@ body {
   cursor: pointer; color: #64748b; font-weight: 600; font-size: 14px;
   border-bottom: 2px solid transparent; transition: 0.15s;
 }
-.region-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+.region-btn.active { color: #1B75BB; border-bottom-color: #1B75BB; }
 .region-btn:hover:not(.active) { color: #0f172a; }
 
 .toolbar-actions {
@@ -243,7 +243,7 @@ body {
   outline: none;
   box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
 }
-.cell-input.number { color: #2563eb; font-weight: 500; }
+.cell-input.number { color: #1B75BB; font-weight: 500; }
 
 .btn-remove {
   background: transparent; color: #ef4444; border: none;

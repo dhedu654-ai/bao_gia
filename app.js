@@ -486,7 +486,7 @@ const App = {
 
     if (data.oversized) {
       html += `<div style="margin-top:12px;padding:8px 12px;background:rgba(245,158,11,0.08);border-radius:8px;font-size:13px;color:var(--warning);border:1px solid rgba(245,158,11,0.15);">
-        ⚠️ Hàng quá khổ (cạnh > 1m hoặc > 150kg/kiện)
+        ⚠️ Hàng quá khổ (cạnh dài nhất > 1.5m hoặc > 150kg/kiện)
       </div>`;
     }
     if (data.needsLifting) {
@@ -630,7 +630,7 @@ const App = {
       includeDelivery: document.getElementById('expDeliveryFee').checked,
       includeCBM: document.getElementById('expCBMPrice').checked,
       includeNoVat: document.getElementById('expNoVat').checked,
-      includeOversized: document.getElementById('expOversized').checked,
+      includeOversized: document.getElementById('expOversized')?.checked || false,
       includeChemical: document.getElementById('expChemical').checked,
       includeInsurance: document.getElementById('expInsurance').checked,
       includeWoodenCrate: document.getElementById('expWoodenCrate').checked,
@@ -653,7 +653,7 @@ const App = {
       conditions.push('- Chi phí xe giao hàng tận nơi tại cửa hàng: 310.000 VND/chuyến.');
     }
     if (expOpts.includeOversized) {
-      conditions.push('- Hàng quá khổ (kích thước > 1m hoặc > 150kg/kiện): phụ thu 15-30% tùy gói cước.');
+      conditions.push('- Hàng quá khổ (cạnh dài nhất > 1.5m hoặc > 150kg/kiện): phụ thu 15-30% tùy gói cước.');
     }
     if (expOpts.includeChemical) {
       conditions.push('- Hàng hóa chất/chất lỏng: phụ thu 20-30% tùy gói cước.');

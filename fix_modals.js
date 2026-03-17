@@ -1,127 +1,7 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bảng Quản Trị Giá - NPV Logistics</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="admin.css">
-</head>
-<body>
-  <!-- Login Overlay -->
-  <div class="overlay" id="authOverlay">
-    <div class="auth-card">
-      <div class="auth-icon">🔒</div>
-      <h2>Đăng nhập Hệ thống</h2>
-      <p>Nhập mật khẩu để truy cập vào Bảng quản trị NPV Logistics.</p>
-      
-      <div class="auth-input-group">
-        <input type="password" id="authPassword" placeholder="Nhập mật khẩu..." onkeypress="if(event.key === 'Enter') login()">
-        <button class="btn btn-primary-bg" onclick="login()">Đăng nhập</button>
-      </div>
-      <div id="authError" style="color:red; font-size:13px; margin-top:10px; display:none;">Sai mật khẩu!</div>
-      
-      <div class="auth-hints">
-        <p><i>Gợi ý:</i></p>
-        <ul style="text-align:left; font-size:12px; margin-top:5px; padding-left:20px; color:#64748b;">
-          <li>Mật khẩu Hành chính: <b>admin</b> (Chỉ xem)</li>
-          <li>Mật khẩu Giám đốc: <b>boss</b> (Được lưu)</li>
-        </ul>
-      </div>
-      
-      <div style="margin-top: 20px;">
-        <a href="index.html" style="font-size:13px; color:#2563eb; text-decoration:none;">&larr; Quay lại form Báo giá</a>
-      </div>
-    </div>
-  </div>
+const fs = require('fs');
+let html = fs.readFileSync('d:/Downloads/BAO GIA/app/admin.html', 'utf8');
 
-  <div class="layout">
-    <div class="sidebar">
-      <div class="sidebar-logo" style="flex-direction: column; align-items: center; padding: 20px 10px;">
-        <img src="npv-logo.png" alt="NPV Logistics" style="max-width: 140px; margin-bottom: 8px;">
-        <span class="text" style="font-size: 14px; font-weight: 700; color: #1B75BB; text-align: center;">CÀI ĐẶT BẢNG GIÁ</span>
-      </div>
-      <ul class="nav-menu" id="navMenu">
-        <!-- JS VẼ TABS VÀO ĐÂY -->
-      </ul>
-      <div class="sidebar-footer">
-         <div class="avatar">AD</div>
-         <div class="admin-info">
-           <div class="admin-name">Admin NPV</div>
-           <div class="admin-email">admin@npv.com</div>
-         </div>
-      </div>
-    </div>
-    
-    <div class="main-content">
-      <div class="header">
-        <div class="header-titles">
-          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-          <div class="header-titles-text">
-            <h1>Cài Đặt Bảng Giá</h1>
-            <p>Sửa đổi trực tiếp trong các ô và ấn nút Lưu để cập nhật tức thì.</p>
-          </div>
-        </div>
-        <div class="actions">
-          <a href="index.html" class="btn btn-outline" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:#1B75BB; border-color:#1B75BB;">⬅️ Báo Giá</a>
-          <div class="auth-role-badge" id="roleBadge" style="display:none;">Chế độ Xem</div>
-          <button class="btn btn-save" id="btnSave" onclick="saveData()">💾 Lưu Lên Máy Chủ</button>
-        </div>
-      </div>
-
-      <div class="editor-container">
-        <!-- Toolbar for Table Pages -->
-        <div id="pageToolbar" class="page-toolbar">
-          <div class="layout-toolbar">
-            <div class="region-tabs" id="regionTabs">
-              <button class="region-btn active" data-region="vung1">Từ Vùng 1 (Hồ Chí Minh)</button>
-              <button class="region-btn" data-region="vung2">Từ Vùng 2 (Đà Nẵng)</button>
-            </div>
-            <div class="toolbar-actions" id="toolbarActions">
-              <button class="btn btn-outline" style="cursor: pointer;" onclick="exportExcel()">⬇️ Xuất Excel</button>
-              <label class="btn btn-outline" style="cursor: pointer;" for="importExcelInput">
-                ⬆️ Nhập từ Excel
-                <input type="file" id="importExcelInput" accept=".xlsx, .xls" style="display: none;" onchange="importExcel(event)">
-              </label>
-              <button class="btn btn-primary-bg btn-add-route" onclick="window.addRouteConfig()">⊕ Thêm tuyến đường mới</button>
-            </div>
-          </div>
-
-          <div class="filter-bar" id="filterBar">
-            <div class="search-input">
-                <span class="search-icon">🔍</span>
-                <input type="text" placeholder="Tìm kiếm theo tỉnh, mã hoặc khu vực..." id="searchInput" oninput="renderContent()">
-            </div>
-            <div class="filter-dropdowns">
-                <label>LỌC THEO:</label>
-                <select id="filterZone" onchange="renderContent()"><option value="">Tất cả Vùng</option><option value="1">Vùng 1</option><option value="2">Vùng 2</option><option value="3">Vùng 3</option><option value="4">Vùng 4</option></select>
-                <!-- Dùng text input ẩn làm filter tỉnh cho nhanh -->
-                <button class="btn-clear-filter" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterZone').value=''; renderContent();">✕ Xóa lọc</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Khung chứa bảng dữ liệu động -->
-        <div id="tableContainer" class="table-wrapper">
-          <div class="loading">Đang tải dữ liệu...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="config.js"></script>
-  <script src="data.js"></script>
-  <script src="admin.js"></script>
-  
-  <script>
-    function toggleSidebar() {
-      document.querySelector('.sidebar').classList.toggle('open');
-      document.querySelector('.overlay-mobile').classList.toggle('show');
-    }
-  </script>
-  <div class="overlay-mobile" onclick="toggleSidebar()"></div>
-
+const modalHTML = `
   <!-- Route Edit Modal -->
   <div class="overlay" id="routeModal" style="display:none; align-items:flex-start; overflow-y:auto; padding: 20px;">
     <div class="modal-content" style="background:white; border-radius:12px; max-width:600px; width:100%; padding:24px; box-shadow:0 10px 25px rgba(0,0,0,0.15); position:relative; margin-top: 40px;">
@@ -222,6 +102,12 @@
       </div>
     </div>
   </div>
+`;
 
-</body>
-</html>
+if (!html.includes('id="routeModal"')) {
+  html = html.replace('</body>', modalHTML + '\n</body>');
+  fs.writeFileSync('d:/Downloads/BAO GIA/app/admin.html', html);
+  console.log("SUCCESS: Added modals to admin.html");
+} else {
+  console.log("Modals already exist.");
+}
