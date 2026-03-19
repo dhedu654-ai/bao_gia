@@ -31,6 +31,31 @@ function renderUI() {
   const hideToolbar = ['delivery', 'surcharges'].includes(currentTab);
   document.getElementById('pageToolbar').style.display = hideToolbar ? 'none' : 'block';
 
+  let defEl = document.getElementById('packageDefinition');
+  if (!defEl && !hideToolbar) {
+    defEl = document.createElement('div');
+    defEl.id = 'packageDefinition';
+    defEl.className = 'package-definition';
+    defEl.style = 'background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 16px; margin-top: 16px; border-radius: 4px; font-size: 13px; color: #0369a1; line-height: 1.5;';
+    const container = document.getElementById('tableContainer');
+    container.parentNode.insertBefore(defEl, container);
+  }
+  
+  if (defEl) {
+    const DEFINITIONS = {
+      g1: "<b>G1 - Gói cước Đúng Giờ:</b> Hướng đến những khách hàng có nhu cầu vận chuyển cần sự cam kết chính xác về thời gian giao hàng và sự chủ động về giờ giấc. Là nền tảng giúp triển khai mạng lưới hoạt động trên toàn quốc.",
+      g2: "<b>G2 - Gói cước Đảm Bảo (Thông thường):</b> Hướng đến những khách hàng không cần sự chính xác cao về thời gian giao hàng. Lựa chọn phù hợp cả về chi phí và thời gian (giao hàng đảm bảo theo thông lệ).",
+      g3: "<b>G3 - Gói cước Tiết Kiệm:</b> Hướng đến những khách hàng đặt vấn đề chi phí lên hàng đầu, không áp lực về vấn đề thời gian giao hàng nhưng cần sự cam kết cao về chất lượng dịch vụ.",
+      g4: "<b>G4 - Gói cước Bao Xe:</b> Cung cấp xe nguyên chuyến (từ 1T đến 7T) giao nhận tận nơi. Giá tính dựa trên cơ sở chuyến hoặc số km, phù hợp với hàng nguyên lô lớn có lộ trình riêng."
+    };
+    if (DEFINITIONS[currentTab]) {
+      defEl.innerHTML = DEFINITIONS[currentTab];
+      defEl.style.display = 'block';
+    } else {
+      defEl.style.display = 'none';
+    }
+  }
+
   if (!hideToolbar) {
     if (currentTab === 'g4') {
       document.getElementById('filterBar').style.display = 'flex';
