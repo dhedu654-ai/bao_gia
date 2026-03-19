@@ -36,7 +36,7 @@ function renderUI() {
     defEl = document.createElement('div');
     defEl.id = 'packageDefinition';
     defEl.className = 'package-definition';
-    defEl.style = 'background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px 16px; margin-bottom: 16px; margin-top: 16px; border-radius: 4px; font-size: 13px; color: #0369a1; line-height: 1.5;';
+    // styles handled via CSS class "package-definition"
     const container = document.getElementById('tableContainer');
     container.parentNode.insertBefore(defEl, container);
   }
