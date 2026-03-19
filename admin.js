@@ -384,7 +384,7 @@ function renderStandardPackageTable(container, pkgId, regionId) {
 
   // Header
   const trHead = document.createElement('tr');
-  const theads = ['Thao tác', 'Vùng', 'Tỉnh', 'Mã', 'Khu vực', 'TG Giao', 'Phí Min', ...pkgData.weightTiers];
+  const theads = currentUserRole === 'boss' ? ['Thao tác', 'Vùng', 'Tỉnh', 'Mã', 'Khu vực', 'TG Giao', 'Phí Min', ...pkgData.weightTiers] : ['Vùng', 'Tỉnh', 'Mã', 'Khu vực', 'TG Giao', 'Phí Min', ...pkgData.weightTiers];
   theads.forEach(thTxt => {
     const th = document.createElement('th');
     th.innerText = thTxt;
@@ -421,24 +421,28 @@ function renderStandardPackageTable(container, pkgId, regionId) {
     }
 
     // Actions
-    const tdAct = document.createElement('td');
-    tdAct.style.whiteSpace = 'nowrap';
-    const authDisabled = currentUserRole !== 'boss' ? 'disabled' : '';
-    const authStyle = currentUserRole !== 'boss' ? 'display:none;' : '';
-    
-    if (!isInactive) {
-      tdAct.innerHTML = `<button style="padding:4px 8px; font-size:16px; margin-right:4px; border:none; background:transparent; cursor:pointer; color:#1B75BB; ${authStyle}" title="Sửa" onclick="openRouteModal(${idx})">✏️</button>
-                         <button style="${authStyle} padding:4px 8px; font-size:16px; border:none; background:transparent; cursor:pointer; color:#ef4444;" title="Ngừng hoạt động" onclick="openDeleteModal(${idx})">✖</button>`;
-    } else {
-      tdAct.innerHTML = `<span style="font-size:11px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">Đã Ngừng<br>(${route.endDate || 'N/A'})</span>`;
+    if (currentUserRole === 'boss') {
+      const tdAct = document.createElement('td');
+      tdAct.style.whiteSpace = 'nowrap';
+      
+      if (!isInactive) {
+        tdAct.innerHTML = `<button style="padding:4px 8px; font-size:16px; margin-right:4px; border:none; background:transparent; cursor:pointer; color:#1B75BB;" title="Sửa" onclick="openRouteModal(${idx})">✏️</button>
+                           <button style="padding:4px 8px; font-size:16px; border:none; background:transparent; cursor:pointer; color:#ef4444;" title="Ngừng hoạt động" onclick="openDeleteModal(${idx})">✖</button>`;
+      } else {
+        tdAct.innerHTML = `<span style="font-size:11px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">Đã Ngừng<br>(${route.endDate || 'N/A'})</span>`;
+      }
+      tr.appendChild(tdAct);
     }
-    tr.appendChild(tdAct);
 
     // Texts instead of inputs
     const tdZone = document.createElement('td'); tdZone.innerText = route.zone || ''; tr.appendChild(tdZone);
     const tdProv = document.createElement('td'); tdProv.style.textAlign = 'left'; tdProv.style.fontWeight = '500';
     let provHtml = route.province || '';
-    if (route.effectiveDate && !isInactive) provHtml += `<br><span style="font-size:10px; color:#10b981; background:#d1fae5; padding:2px 4px; border-radius:4px;">Từ: ${route.effectiveDate}</span>`;
+    if (isInactive) {
+      if (currentUserRole !== 'boss') provHtml += `<br><span style="font-size:10px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 4px; border-radius:4px;">Đã Ngừng (${route.endDate || 'N/A'})</span>`;
+    } else if (route.effectiveDate) {
+      provHtml += `<br><span style="font-size:10px; color:#10b981; background:#d1fae5; padding:2px 4px; border-radius:4px;">Từ: ${route.effectiveDate}</span>`;
+    }
     tdProv.innerHTML = provHtml; tr.appendChild(tdProv);
     const tdCode = document.createElement('td'); tdCode.innerText = route.code || ''; tr.appendChild(tdCode);
     const tdArea = document.createElement('td'); tdArea.style.textAlign = 'left'; tdArea.innerText = route.area || ''; tr.appendChild(tdArea);
@@ -467,7 +471,7 @@ function renderG4Table(container, regionId) {
   table.className = 'data-table';
 
   const trHead = document.createElement('tr');
-  const theads = ['Thao tác', 'ID', 'Loại xe', 'Kích thước', 'TG Bốc', 'Base (10km)', ...pkgData.kmTiers.slice(1), 'Phí Chờ', 'Thêm Điểm'];
+  const theads = currentUserRole === 'boss' ? ['Thao tác', 'ID', 'Loại xe', 'Kích thước', 'TG Bốc', 'Base (10km)', ...pkgData.kmTiers.slice(1), 'Phí Chờ', 'Thêm Điểm'] : ['ID', 'Loại xe', 'Kích thước', 'TG Bốc', 'Base (10km)', ...pkgData.kmTiers.slice(1), 'Phí Chờ', 'Thêm Điểm'];
   theads.forEach(t => { const th = document.createElement('th'); th.innerText = t; trHead.appendChild(th); });
   table.appendChild(trHead);
 
@@ -494,24 +498,27 @@ function renderG4Table(container, regionId) {
       tr.style.background = '#f1f5f9';
     }
 
-    const tdAct = document.createElement('td');
-    tdAct.style.whiteSpace = 'nowrap';
-    const authDisabled = currentUserRole !== 'boss' ? 'disabled' : '';
-    const authStyle = currentUserRole !== 'boss' ? 'display:none;' : '';
-    
-    if (!isInactive) {
-      tdAct.innerHTML = `<button style="padding:4px 8px; font-size:16px; margin-right:4px; border:none; background:transparent; cursor:pointer; color:#1B75BB; ${authStyle}" title="Sửa" onclick="openG4Modal(${idx})">✏️</button>
-                         <button style="${authStyle} padding:4px 8px; font-size:16px; border:none; background:transparent; cursor:pointer; color:#ef4444;" title="Ngừng hoạt động" onclick="openDeleteModalG4(${idx})">✖</button>`;
-    } else {
-      tdAct.innerHTML = `<span style="font-size:11px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">Đã Ngừng<br>(${v.endDate || 'N/A'})</span>`;
+    if (currentUserRole === 'boss') {
+      const tdAct = document.createElement('td');
+      tdAct.style.whiteSpace = 'nowrap';
+      if (!isInactive) {
+        tdAct.innerHTML = `<button style="padding:4px 8px; font-size:16px; margin-right:4px; border:none; background:transparent; cursor:pointer; color:#1B75BB;" title="Sửa" onclick="openG4Modal(${idx})">✏️</button>
+                           <button style="padding:4px 8px; font-size:16px; border:none; background:transparent; cursor:pointer; color:#ef4444;" title="Ngừng hoạt động" onclick="openDeleteModalG4(${idx})">✖</button>`;
+      } else {
+        tdAct.innerHTML = `<span style="font-size:11px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">Đã Ngừng<br>(${v.endDate || 'N/A'})</span>`;
+      }
+      tr.appendChild(tdAct);
     }
-    tr.appendChild(tdAct);
 
     // Text cells
     const cId = document.createElement('td'); cId.innerText = v.id || ''; tr.appendChild(cId);
     
     let nameHtml = v.name || '';
-    if (v.effectiveDate && !isInactive) nameHtml += `<br><span style="font-size:10px; color:#10b981; background:#d1fae5; padding:2px 4px; border-radius:4px;">Từ: ${v.effectiveDate}</span>`;
+    if (isInactive) {
+      if (currentUserRole !== 'boss') nameHtml += `<br><span style="font-size:10px; color:#ef4444; font-weight:bold; background:#fee2e2; padding:2px 4px; border-radius:4px;">Đã Ngừng (${v.endDate || 'N/A'})</span>`;
+    } else if (v.effectiveDate) {
+      nameHtml += `<br><span style="font-size:10px; color:#10b981; background:#d1fae5; padding:2px 4px; border-radius:4px;">Từ: ${v.effectiveDate}</span>`;
+    }
     const cName = document.createElement('td'); cName.innerHTML = nameHtml; cName.style.fontWeight = '500'; cName.style.textAlign = 'left'; tr.appendChild(cName);
     
     const cSize = document.createElement('td'); cSize.innerText = v.size || ''; tr.appendChild(cSize);
@@ -665,6 +672,8 @@ function login() {
     document.getElementById('btnSave').style.display = 'none';
     const importLabel = document.querySelector('label[for="importExcelInput"]');
     if (importLabel) importLabel.style.display = 'none';
+    const addBtn = document.querySelector('.btn-add-route');
+    if (addBtn) addBtn.style.display = 'none';
   } else if (pwd === 'boss') {
     currentUserRole = 'boss';
     document.getElementById('authOverlay').style.display = 'none';
