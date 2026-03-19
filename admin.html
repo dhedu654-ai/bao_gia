@@ -89,15 +89,20 @@
           </div>
 
           <div class="filter-bar" id="filterBar">
-            <div class="search-input">
+            <div class="search-input" id="searchContainer">
                 <span class="search-icon">🔍</span>
                 <input type="text" placeholder="Tìm kiếm theo tỉnh, mã hoặc khu vực..." id="searchInput" oninput="renderContent()">
             </div>
             <div class="filter-dropdowns">
                 <label>LỌC THEO:</label>
+                <select id="filterStatus" onchange="renderContent()">
+                    <option value="">Tất cả Trạng thái</option>
+                    <option value="active">Đang hoạt động</option>
+                    <option value="inactive">Ngừng hoạt động</option>
+                </select>
                 <select id="filterZone" onchange="renderContent()"><option value="">Tất cả Vùng</option><option value="1">Vùng 1</option><option value="2">Vùng 2</option><option value="3">Vùng 3</option><option value="4">Vùng 4</option></select>
                 <!-- Dùng text input ẩn làm filter tỉnh cho nhanh -->
-                <button class="btn-clear-filter" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterZone').value=''; renderContent();">✕ Xóa lọc</button>
+                <button class="btn-clear-filter" onclick="document.getElementById('searchInput').value=''; document.getElementById('filterZone').value=''; document.getElementById('filterStatus').value=''; renderContent();">✕ Xóa lọc</button>
             </div>
           </div>
         </div>

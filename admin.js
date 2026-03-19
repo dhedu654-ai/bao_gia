@@ -33,10 +33,14 @@ function renderUI() {
 
   if (!hideToolbar) {
     if (currentTab === 'g4') {
-      document.getElementById('filterBar').style.display = 'none';
+      document.getElementById('filterBar').style.display = 'flex';
+      document.getElementById('searchContainer').style.display = 'none';
+      document.getElementById('filterZone').style.display = 'none';
       document.querySelector('.btn-add-route').innerText = '⊕ Thêm loại xe';
     } else {
       document.getElementById('filterBar').style.display = 'flex';
+      document.getElementById('searchContainer').style.display = 'flex';
+      document.getElementById('filterZone').style.display = 'inline-block';
       document.querySelector('.btn-add-route').innerText = '⊕ Thêm tuyến đường mới';
     }
   }
@@ -59,6 +63,8 @@ function switchTab(tabId) {
   if (si) si.value = '';
   const fz = document.getElementById('filterZone');
   if (fz) fz.value = '';
+  const fs = document.getElementById('filterStatus');
+  if (fs) fs.value = '';
   renderUI();
 }
 
@@ -346,6 +352,7 @@ function renderStandardPackageTable(container, pkgId, regionId) {
 
   const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
   const filterZone = document.getElementById('filterZone')?.value || '';
+  const filterStatus = document.getElementById('filterStatus')?.value || '';
 
   const table = document.createElement('table');
   table.className = 'data-table';
@@ -360,7 +367,22 @@ function renderStandardPackageTable(container, pkgId, regionId) {
   });
   table.appendChild(trHead);
 
-  pkgData.routes.forEach((route, idx) => {
+  let routesToRender = pkgData.routes.map((route, originalIndex) => ({ route, originalIndex }));
+  
+  routesToRender.sort((a, b) => {
+    const aIsInactive = a.route.status === 'inactive';
+    const bIsInactive = b.route.status === 'inactive';
+    if (aIsInactive && !bIsInactive) return 1;
+    if (!aIsInactive && bIsInactive) return -1;
+    return 0; // maintain relative order
+  });
+
+  routesToRender.forEach(({ route, originalIndex }) => {
+    const idx = originalIndex;
+    const isInactive = route.status === 'inactive';
+    const currentStatus = isInactive ? 'inactive' : 'active';
+    
+    if (filterStatus && currentStatus !== filterStatus) return;
     if (filterZone && (route.zone || '').toString() !== filterZone) return;
     if (searchTerm) {
       const txt = ((route.province || '') + (route.code || '') + (route.area || '')).toLowerCase();
@@ -368,7 +390,6 @@ function renderStandardPackageTable(container, pkgId, regionId) {
     }
 
     const tr = document.createElement('tr');
-    const isInactive = route.status === 'inactive';
     if (isInactive) {
       tr.style.opacity = '0.5';
       tr.style.background = '#f1f5f9';
@@ -415,6 +436,8 @@ function renderG4Table(container, regionId) {
   const pkgData = PRICING_DATA.g4[regionId];
   if (!pkgData) { container.innerHTML = '<p style="color:#94a3b8;text-align:center;">Không có dữ liệu.</p>'; return; }
 
+  const filterStatus = document.getElementById('filterStatus')?.value || '';
+
   const table = document.createElement('table');
   table.className = 'data-table';
 
@@ -423,9 +446,24 @@ function renderG4Table(container, regionId) {
   theads.forEach(t => { const th = document.createElement('th'); th.innerText = t; trHead.appendChild(th); });
   table.appendChild(trHead);
 
-  pkgData.vehicles.forEach((v, idx) => {
-    const tr = document.createElement('tr');
+  let vehiclesToRender = pkgData.vehicles.map((v, originalIndex) => ({ v, originalIndex }));
+  
+  vehiclesToRender.sort((a, b) => {
+    const aIsInactive = a.v.status === 'inactive';
+    const bIsInactive = b.v.status === 'inactive';
+    if (aIsInactive && !bIsInactive) return 1;
+    if (!aIsInactive && bIsInactive) return -1;
+    return 0;
+  });
+
+  vehiclesToRender.forEach(({ v, originalIndex }) => {
+    const idx = originalIndex;
     const isInactive = v.status === 'inactive';
+    const currentStatus = isInactive ? 'inactive' : 'active';
+    
+    if (filterStatus && currentStatus !== filterStatus) return;
+
+    const tr = document.createElement('tr');
     if (isInactive) {
       tr.style.opacity = '0.5';
       tr.style.background = '#f1f5f9';
