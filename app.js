@@ -84,8 +84,8 @@ const App = {
       wantDelivery: document.getElementById('wantDelivery').checked,
       vehicleType: parseInt(document.getElementById('vehicleType').value),
       distance: parseFloat(document.getElementById('distance').value) || 0,
-      totalOccupiedHours: parseFloat(document.getElementById('totalOccupiedHours').value) || 0,
-      drivingHours: parseFloat(document.getElementById('drivingHours').value) || 0,
+      totalOccupiedHours: 0,
+      drivingHours: 0,
       extraPoints: parseInt(document.getElementById('extraPoints').value) || 0,
       hasReturn: document.getElementById('hasReturn').checked,
       woodenCrateCBM: parseFloat(document.getElementById('woodenCrateCBM').value) || 0,
@@ -606,8 +606,7 @@ const App = {
     });
     document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
     document.getElementById('pieces').value = '1';
-    document.getElementById('totalOccupiedHours').value = '0';
-    document.getElementById('drivingHours').value = '0';
+    // time fields removed
     document.getElementById('extraPoints').value = '0';
     document.getElementById('district').value = '';
     document.getElementById('routeWarningBox').style.display = 'none';

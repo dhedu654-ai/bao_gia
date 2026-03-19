@@ -116,7 +116,7 @@
         </div>
 
         <div style="font-size:13px; font-weight:600; color:#475569; margin-bottom:8px; margin-top:12px;">Điểm trả hàng</div>
-        <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-grid cols-3" style="gap: 16px;">
           <div class="form-group">
             <label>Tỉnh/TP <span class="req">*</span></label>
             <select class="form-control" id="province">
@@ -175,18 +175,6 @@
             <div class="form-group">
               <label>Khoảng cách (km) <span class="req">*</span></label>
               <input type="number" class="form-control" id="distance" placeholder="VD: 250" min="0">
-            </div>
-            <div class="form-group">
-              <label>Tổng TG từ lúc lấy đến giao xong(h) <span class="help"
-                  title="Tính từ lúc xe có mặt tại kho lấy đến khi hoàn thành xong tại kho giao">*</span></label>
-              <input type="number" class="form-control" id="totalOccupiedHours" placeholder="0" min="0" step="0.5"
-                value="0">
-            </div>
-            <div class="form-group">
-              <label>TG xe chạy ròng trên đường (h) <span class="help"
-                  title="Trừ đi thời gian bốc xếp tại các trạm">*</span></label>
-              <input type="number" class="form-control" id="drivingHours" placeholder="0" min="0" step="0.5"
-                value="0">
             </div>
             <div class="form-group">
               <label>Số điểm giao thêm</label>
