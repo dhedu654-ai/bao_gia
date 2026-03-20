@@ -735,6 +735,13 @@ function importExcel(e) {
   if (currentUserRole !== 'boss') { alert("❌ Chỉ Giám đốc thao tác!"); e.target.value = ""; return; }
   const file = e.target.files[0];
   if (!file) return;
+
+  const importDate = window.prompt("Nhập ngày áp dụng hiệu lực cho bảng giá từ file này (VD: 2026-04-01):", new Date().toISOString().split('T')[0]);
+  if (!importDate) {
+    e.target.value = "";
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = (evt) => {
     try {
@@ -748,53 +755,83 @@ function importExcel(e) {
         if (sheet) {
           const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
           const pkg = sheetName.toLowerCase();
-          let newRoutesVung1 = [], newRoutesVung2 = [];
           for (let i = 1; i < json.length; i++) {
             let row = json[i];
             if (!row || row.length < 5) continue;
             let rData = {
               zone: row[0]?.toString().includes('HCM') ? 1 : 2,
-              province: row[1], code: "", area: row[2] || "",
+              province: row[1] || "", code: "", area: row[2] || "",
               deliveryTime: row[3] || "", min: parseFloat(row[4]) || 0,
-              prices: row.slice(5).map(v => parseFloat(v) || 0)
+              prices: row.slice(5).map(v => parseFloat(v) || 0),
+              effectiveDate: importDate,
+              status: 'active'
             };
             while(rData.prices.length < 5) rData.prices.push(0);
-            if (rData.zone === 1) newRoutesVung1.push(rData);
-            else newRoutesVung2.push(rData);
+
+            const vungKey = rData.zone === 1 ? 'vung1' : 'vung2';
+            if (!PRICING_DATA[pkg][vungKey]) continue; 
+            let targetRoutes = PRICING_DATA[pkg][vungKey].routes;
+            
+            let existingIdx = targetRoutes.findIndex(r => r.province === rData.province && r.area === rData.area && r.status !== 'inactive');
+            if (existingIdx >= 0) {
+              let oldRoute = targetRoutes[existingIdx];
+              const oldTime = oldRoute.time || oldRoute.deliveryTime || "";
+              if (oldRoute.min !== rData.min || JSON.stringify(oldRoute.prices) !== JSON.stringify(rData.prices) || oldTime !== rData.deliveryTime) {
+                oldRoute.status = 'inactive';
+                oldRoute.endDate = importDate;
+                targetRoutes.unshift(rData);
+                importedCount++;
+              }
+            } else {
+              targetRoutes.unshift(rData);
+              importedCount++;
+            }
           }
-          if (newRoutesVung1.length) { PRICING_DATA[pkg].vung1.routes = newRoutesVung1; importedCount++; }
-          if (newRoutesVung2.length && PRICING_DATA[pkg].vung2) { PRICING_DATA[pkg].vung2.routes = newRoutesVung2; }
         }
       });
       
       const g4Sheet = workbook.Sheets['G4'];
       if (g4Sheet) {
          const json = XLSX.utils.sheet_to_json(g4Sheet, { header: 1 });
-         let v1 = [], v2 = [];
          for(let i=1; i<json.length; i++) {
             let row = json[i];
             if(!row || row.length < 6) continue;
             let vZone = row[0]?.toString().includes('HCM') ? 1 : 2;
             let vData = {
-               id: vZone === 1 ? v1.length+1 : v2.length+1,
-               name: row[1], size: row[2] || "",
+               name: row[1] || "", size: row[2] || "",
                loadTime: row[3] || "", waitFee: parseFloat(row[4]) || 0,
                extraPoint: parseFloat(row[5]) || 0,
                basePrice: parseFloat(row[6]) || 0,
-               kmPrices: [0, ...row.slice(7).map(v => parseFloat(v)||0)]
+               kmPrices: [0, ...row.slice(7).map(v => parseFloat(v)||0)],
+               effectiveDate: importDate,
+               status: 'active'
             };
             while(vData.kmPrices.length < 6) vData.kmPrices.push(0);
-            if (vZone === 1) v1.push(vData); else v2.push(vData);
+
+            const vungKey = vZone === 1 ? 'vung1' : 'vung2';
+            if (!PRICING_DATA.g4[vungKey]) continue;
+            let targetV = PRICING_DATA.g4[vungKey].vehicles;
+
+            let existingIdx = targetV.findIndex(v => v.name === vData.name && v.size === vData.size && v.status !== 'inactive');
+            if (existingIdx >= 0) {
+              let oldV = targetV[existingIdx];
+              if (oldV.basePrice !== vData.basePrice || JSON.stringify(oldV.kmPrices) !== JSON.stringify(vData.kmPrices) || oldV.waitFee !== vData.waitFee || oldV.extraPoint !== vData.extraPoint || oldV.loadTime !== vData.loadTime) {
+                 vData.id = oldV.id; 
+                 oldV.status = 'inactive'; oldV.endDate = importDate;
+                 targetV.unshift(vData); importedCount++;
+              }
+            } else {
+              vData.id = targetV.length > 0 ? Math.max(...targetV.map(x=>x.id)) + 1 : 1;
+              targetV.unshift(vData); importedCount++;
+            }
          }
-         if (v1.length) { PRICING_DATA.g4.vung1.vehicles = v1; importedCount++; }
-         if (v2.length) { PRICING_DATA.g4.vung2.vehicles = v2; }
       }
       
       if (importedCount > 0) {
-        alert("✅ Nhập cấu hình thành công tạm thời từ Excel. Đi tới các tab để kiểm tra lại và nhấn 'Lưu Bảng Giá' để áp dụng chính thức lên hệ thống!");
+        alert("✅ Đã cập nhật thành công " + importedCount + " giá trị có thay đổi so với giá cũ (Từ ngày " + importDate + ").\nHãy ấn 'Lưu Bảng Giá' để áp dụng chính thức lên hệ thống!");
         renderContent();
       } else {
-        alert("⚠ Không tìm thấy dữ liệu hợp lệ trong các sheet G1, G2, G3, G4. Vui lòng rà soát lại file Excel vừa tải lên và đối chiếu với File Mẫu.");
+        alert("ℹ️ File Excel không có tuyến nào mới, hoặc các báo giá hoàn toàn giống với dữ liệu trên hệ thống. Không có thay đổi nào được tạo thêm để tránh rác dữ liệu.");
       }
     } catch (err) { alert("❌ Lỗi đọc file: " + err.message); }
   };

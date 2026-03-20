@@ -64,7 +64,16 @@ const Calculator = {
         const pkg = PRICING_DATA[packageType][region];
         if (!pkg) return null;
 
-        const route = pkg.routes.find(r => r.province === provinceName);
+        const today = new Date().toISOString().split('T')[0];
+        const route = pkg.routes.find(r => {
+            if (r.province !== provinceName) return false;
+            if (r.effectiveDate && r.effectiveDate > today) return false; // Chưa tới ngày hiệu lực
+            if (r.status === 'inactive') {
+                if (!r.endDate) return false; // Bị xóa hẳn
+                if (r.endDate <= today) return false; // Đã hết hạn
+            }
+            return true;
+        });
         if (!route) return null;
 
         // Tính cước lũy tiến
@@ -113,7 +122,16 @@ const Calculator = {
         const pkg = PRICING_DATA.g4[region];
         if (!pkg) return null;
 
-        const vehicle = pkg.vehicles.find(v => v.id === vehicleId);
+        const today = new Date().toISOString().split('T')[0];
+        const vehicle = pkg.vehicles.find(v => {
+            if (v.id !== vehicleId) return false;
+            if (v.effectiveDate && v.effectiveDate > today) return false;
+            if (v.status === 'inactive') {
+                if (!v.endDate) return false;
+                if (v.endDate <= today) return false;
+            }
+            return true;
+        });
         if (!vehicle) return null;
 
         // Tính giá base (đến 10km)
