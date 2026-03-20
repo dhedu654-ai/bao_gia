@@ -82,6 +82,8 @@ const App = {
       isNonStackable: document.getElementById('isNonStackable').checked,
       wantInsurance: document.getElementById('wantInsurance').checked,
       wantDelivery: document.getElementById('wantDelivery').checked,
+      wantPickup: document.getElementById('wantPickup').checked,
+      isRestricted: document.getElementById('isRestricted').checked,
       vehicleType: parseInt(document.getElementById('vehicleType').value),
       distance: parseFloat(document.getElementById('distance').value) || 0,
       totalOccupiedHours: 0,
@@ -144,25 +146,54 @@ const App = {
     // Lấy notes phụ phí
     const pkgData = PRICING_DATA[f.packageType][f.region];
 
-    // Delivery fee
-    let deliveryFee = 0;
-    if (f.wantDelivery) {
-      const da = PRICING_DATA.deliveryFee.areas.find(a => {
-        if (['Hồ Chí Minh', 'Bình Dương', 'Đồng Nai'].includes(f.province)) return a.code === 'HCM';
-        if (f.province === 'Đà Nẵng') return a.code === 'DNG';
-        if (f.province === 'Hà Nội') return a.code === 'HNI';
-        if (['Khánh Hòa', 'Thừa Thiên Huế', 'Bình Định'].includes(f.province)) return a.code === 'NTG_HUE_BDH';
-        if (['Đắk Nông', 'Đắk Lắk', 'Gia Lai', 'Kon Tum'].includes(f.province)) return a.code === 'TAYNGUYEN';
+    // Helper: tìm khu vực giao nhận theo tỉnh
+    function findDeliveryArea(province) {
+      return PRICING_DATA.deliveryFee.areas.find(a => {
+        if (['Hồ Chí Minh', 'Bình Dương', 'Đồng Nai'].includes(province)) return a.code === 'HCM';
+        if (province === 'Đà Nẵng') return a.code === 'DNG';
+        if (province === 'Hà Nội') return a.code === 'HNI';
+        if (['Khánh Hòa', 'Thừa Thiên Huế', 'Bình Định'].includes(province)) return a.code === 'NTG_HUE_BDH';
+        if (['Đắk Nông', 'Đắk Lắk', 'Gia Lai', 'Kon Tum'].includes(province)) return a.code === 'TAYNGUYEN';
         return false;
       });
-      if (da) {
-        // Chọn loại xe giao nhận: xét cả trọng lượng VÀ CBM, lấy loại xe lớn hơn
-        const truckByWeight = chargeableWeight <= 1000 ? 0 : chargeableWeight <= 2000 ? 1 : chargeableWeight <= 3500 ? 2 : 3;
-        const truckByCbm = f.cbm <= 0 ? 0 : f.cbm <= 6 ? 0 : f.cbm <= 10 ? 1 : f.cbm <= 15 ? 2 : 3;
-        const truckIdx = Math.max(truckByWeight, truckByCbm);
-        const truckKeys = ['xe1t', 'xe2t', 'xe35t', 'xe5t'];
-        deliveryFee = da.fees[truckKeys[truckIdx]];
+    }
+
+    // Helper: tính phí giao nhận cho 1 đầu
+    function calcDeliveryFeeForArea(da, weight, cbm, isRestricted) {
+      if (!da) return { fee: 0, truckName: '', truckCount: 1 };
+      if (isRestricted) {
+        const trucksByWeight = Math.ceil(weight / 1000);
+        const trucksByCbm = cbm > 0 ? Math.ceil(cbm / 6) : 1;
+        const truckCount = Math.max(trucksByWeight, trucksByCbm, 1);
+        return { fee: da.fees.xe1t * truckCount, truckName: `xe 1T × ${truckCount} chuyến`, truckCount };
       }
+      const truckByWeight = weight <= 1000 ? 0 : weight <= 2000 ? 1 : weight <= 3500 ? 2 : 3;
+      const truckByCbm = cbm <= 0 ? 0 : cbm <= 6 ? 0 : cbm <= 10 ? 1 : cbm <= 15 ? 2 : 3;
+      const truckIdx = Math.max(truckByWeight, truckByCbm);
+      const truckKeys = ['xe1t', 'xe2t', 'xe35t', 'xe5t'];
+      const truckNames = ['xe 1T', 'xe 2T', 'xe 3.5T', 'xe 5T'];
+      return { fee: da.fees[truckKeys[truckIdx]], truckName: truckNames[truckIdx], truckCount: 1 };
+    }
+
+    // Phí lấy hàng tận nơi (đầu nhận)
+    let pickupFee = 0;
+    let pickupInfo = '';
+    if (f.wantPickup) {
+      const pickupProvince = f.region === 'vung1' ? 'Hồ Chí Minh' : 'Đà Nẵng';
+      const da = findDeliveryArea(pickupProvince);
+      const result = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestricted);
+      pickupFee = result.fee;
+      pickupInfo = result.truckName;
+    }
+
+    // Phí giao hàng tận nơi (đầu trả)
+    let deliveryFee = 0;
+    let deliveryInfo = '';
+    if (f.wantDelivery) {
+      const da = findDeliveryArea(f.province);
+      const result = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestricted);
+      deliveryFee = result.fee;
+      deliveryInfo = result.truckName;
     }
 
     // Surcharge options dùng chung
@@ -172,7 +203,10 @@ const App = {
       isChemical: f.isChemical,
       chemicalPercent: pkgData.notes.chemicalPercent,
       isSuburban: f.areaType === 'suburb',
+      pickupFee,
+      pickupInfo,
       deliveryFee,
+      deliveryInfo,
       woodenCrate: f.woodenCrateCBM > 0,
       cbm: f.woodenCrateCBM,
       countingQty: f.countingQty,
@@ -522,22 +556,48 @@ const App = {
     }
 
     let deliveryFee = 0;
-    if (f.wantDelivery) {
-      const da = PRICING_DATA.deliveryFee.areas.find(a => {
-        if (['Hồ Chí Minh', 'Bình Dương', 'Đồng Nai'].includes(f.province)) return a.code === 'HCM';
-        if (f.province === 'Đà Nẵng') return a.code === 'DNG';
-        if (f.province === 'Hà Nội') return a.code === 'HNI';
-        if (['Khánh Hòa', 'Thừa Thiên Huế', 'Bình Định'].includes(f.province)) return a.code === 'NTG_HUE_BDH';
-        if (['Đắk Nông', 'Đắk Lắk', 'Gia Lai', 'Kon Tum'].includes(f.province)) return a.code === 'TAYNGUYEN';
-        return false;
-      });
-      if (da) {
-        const truckByWeight = chargeableWeight <= 1000 ? 0 : chargeableWeight <= 2000 ? 1 : chargeableWeight <= 3500 ? 2 : 3;
-        const truckByCbm = f.cbm <= 0 ? 0 : f.cbm <= 6 ? 0 : f.cbm <= 10 ? 1 : f.cbm <= 15 ? 2 : 3;
-        const truckIdx = Math.max(truckByWeight, truckByCbm);
-        const truckKeys = ['xe1t', 'xe2t', 'xe35t', 'xe5t'];
-        deliveryFee = da.fees[truckKeys[truckIdx]];
+    if (f.wantDelivery || f.wantPickup) {
+      // For compare, use combined pickup+delivery
+      let totalDel = 0;
+      if (f.wantPickup) {
+        const pickupProv = f.region === 'vung1' ? 'Hồ Chí Minh' : 'Đà Nẵng';
+        const daPick = PRICING_DATA.deliveryFee.areas.find(a => {
+          if (['Hồ Chí Minh', 'Bình Dương', 'Đồng Nai'].includes(pickupProv)) return a.code === 'HCM';
+          if (pickupProv === 'Đà Nẵng') return a.code === 'DNG';
+          return false;
+        });
+        if (daPick) {
+          if (f.isRestricted) {
+            const tc = Math.max(Math.ceil(chargeableWeight/1000), f.cbm > 0 ? Math.ceil(f.cbm/6) : 1, 1);
+            totalDel += daPick.fees.xe1t * tc;
+          } else {
+            const tw = chargeableWeight <= 1000 ? 0 : chargeableWeight <= 2000 ? 1 : chargeableWeight <= 3500 ? 2 : 3;
+            const tc2 = f.cbm <= 0 ? 0 : f.cbm <= 6 ? 0 : f.cbm <= 10 ? 1 : f.cbm <= 15 ? 2 : 3;
+            totalDel += daPick.fees[['xe1t','xe2t','xe35t','xe5t'][Math.max(tw,tc2)]];
+          }
+        }
       }
+      if (f.wantDelivery) {
+        const daDel = PRICING_DATA.deliveryFee.areas.find(a => {
+          if (['Hồ Chí Minh', 'Bình Dương', 'Đồng Nai'].includes(f.province)) return a.code === 'HCM';
+          if (f.province === 'Đà Nẵng') return a.code === 'DNG';
+          if (f.province === 'Hà Nội') return a.code === 'HNI';
+          if (['Khánh Hòa', 'Thừa Thiên Huế', 'Bình Định'].includes(f.province)) return a.code === 'NTG_HUE_BDH';
+          if (['Đắk Nông', 'Đắk Lắk', 'Gia Lai', 'Kon Tum'].includes(f.province)) return a.code === 'TAYNGUYEN';
+          return false;
+        });
+        if (daDel) {
+          if (f.isRestricted) {
+            const tc = Math.max(Math.ceil(chargeableWeight/1000), f.cbm > 0 ? Math.ceil(f.cbm/6) : 1, 1);
+            totalDel += daDel.fees.xe1t * tc;
+          } else {
+            const tw = chargeableWeight <= 1000 ? 0 : chargeableWeight <= 2000 ? 1 : chargeableWeight <= 3500 ? 2 : 3;
+            const tc2 = f.cbm <= 0 ? 0 : f.cbm <= 6 ? 0 : f.cbm <= 10 ? 1 : f.cbm <= 15 ? 2 : 3;
+            totalDel += daDel.fees[['xe1t','xe2t','xe35t','xe5t'][Math.max(tw,tc2)]];
+          }
+        }
+      }
+      deliveryFee = totalDel;
     }
 
     const results = Calculator.comparePackages(f.region, f.province, chargeableWeight, {

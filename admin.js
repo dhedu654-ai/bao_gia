@@ -717,8 +717,10 @@ function downloadTemplate() {
   const wb = XLSX.utils.book_new();
 
   ['G1', 'G2', 'G3'].forEach(pkg => {
+    const p = pkg.toLowerCase();
+    const headers = ["Vùng (VD: Từ HCM hoặc Từ ĐN)", "Tỉnh", "Khu vực", "Thời gian giao", "Giá Min", ...PRICING_DATA[p].vung1.weightTiers];
     const data = [
-      ["Vùng (VD: Từ HCM hoặc Từ ĐN)", "Tỉnh", "Khu vực", "Thời gian giao", "Giá Min", "Nấc 1", "Nấc 2", "Nấc 3", "Nấc 4", "Nấc 5"],
+      headers,
       ["Từ HCM", "Bình Dương", "Tp. Thủ Dầu Một", "1 ngày", 100000, 1500, 1400, 1300, 1200, 1000],
       ["Từ HCM", "Đồng Nai", "Tp. Biên Hòa", "1 ngày", 100000, 1500, 1400, 1300, 1200, 1000],
       ["Từ ĐN", "Quảng Nam", "Tam Kỳ", "1 ngày", 120000, 2000, 1800, 1500, 1300, 1100]

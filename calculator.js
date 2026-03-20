@@ -213,9 +213,15 @@ const Calculator = {
             totalSurcharge += fee;
         }
 
-        // Tự động Phí giao nhận tận nơi
+        // Tự động Phí Lấy hàng tận nơi
+        if (options.pickupFee && options.pickupFee > 0) {
+            surcharges.push({ name: options.pickupInfo ? `Phí lấy hàng tận nơi (${options.pickupInfo})` : "Phí lấy hàng tận nơi", amount: options.pickupFee });
+            totalSurcharge += options.pickupFee;
+        }
+
+        // Tự động Phí giao hàng tận nơi
         if (options.deliveryFee && options.deliveryFee > 0) {
-            surcharges.push({ name: "Phí phụ xe nâng hạ / giao nhận", amount: options.deliveryFee });
+            surcharges.push({ name: options.deliveryInfo ? `Phí phụ xe nâng hạ / giao hàng tận nơi (${options.deliveryInfo})` : "Phí phụ xe nâng hạ / giao hàng tận nơi", amount: options.deliveryFee });
             totalSurcharge += options.deliveryFee;
         }
 
