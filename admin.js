@@ -90,6 +90,11 @@ function switchTab(tabId) {
   if (fz) fz.value = '';
   const fs = document.getElementById('filterStatus');
   if (fs) fs.value = '';
+  // Auto-close sidebar on mobile
+  const sb = document.querySelector('.sidebar');
+  const ov = document.querySelector('.overlay-mobile');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('show');
   renderUI();
 }
 
