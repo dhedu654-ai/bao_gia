@@ -80,7 +80,8 @@
             </div>
             <div class="toolbar-actions" id="toolbarActions">
               <button class="btn btn-outline" style="cursor: pointer;" onclick="exportExcel()">⬇️ Xuất Excel</button>
-              <label class="btn btn-outline" style="cursor: pointer;" for="importExcelInput">
+              <button class="btn btn-outline" style="cursor: pointer; color: #10b981; border-color: #10b981;" id="btnDownloadTemplate" onclick="downloadTemplate()">📄 Tải File Mẫu</button>
+              <label class="btn btn-outline" style="cursor: pointer;" for="importExcelInput" id="btnImportExcel">
                 ⬆️ Nhập từ Excel
                 <input type="file" id="importExcelInput" accept=".xlsx, .xls" style="display: none;" onchange="importExcel(event)">
               </label>

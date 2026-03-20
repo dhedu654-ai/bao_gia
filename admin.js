@@ -674,6 +674,8 @@ function login() {
     if (importLabel) importLabel.style.display = 'none';
     const addBtn = document.querySelector('.btn-add-route');
     if (addBtn) addBtn.style.display = 'none';
+    const tplBtn = document.getElementById('btnDownloadTemplate');
+    if (tplBtn) tplBtn.style.display = 'none';
   } else if (pwd === 'boss') {
     currentUserRole = 'boss';
     document.getElementById('authOverlay').style.display = 'none';
@@ -705,6 +707,30 @@ function exportExcel() {
   XLSX.writeFile(wb, `BangGia_NPV_${new Date().getTime()}.xlsx`);
 }
 
+function downloadTemplate() {
+  if (typeof XLSX === 'undefined') { alert('Thư viện Excel chưa tải xong.'); return; }
+  const wb = XLSX.utils.book_new();
+
+  ['G1', 'G2', 'G3'].forEach(pkg => {
+    const data = [
+      ["Vùng (VD: Từ HCM hoặc Từ ĐN)", "Tỉnh", "Khu vực", "Thời gian giao", "Giá Min", "Nấc 1", "Nấc 2", "Nấc 3", "Nấc 4", "Nấc 5"],
+      ["Từ HCM", "Bình Dương", "Tp. Thủ Dầu Một", "1 ngày", 100000, 1500, 1400, 1300, 1200, 1000],
+      ["Từ HCM", "Đồng Nai", "Tp. Biên Hòa", "1 ngày", 100000, 1500, 1400, 1300, 1200, 1000],
+      ["Từ ĐN", "Quảng Nam", "Tam Kỳ", "1 ngày", 120000, 2000, 1800, 1500, 1300, 1100]
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), pkg);
+  });
+
+  const g4Data = [
+    ["Vùng (VD: Từ HCM hoặc Từ ĐN)", "Tên xe", "Kích thước (D*R*C)", "TG Bốc xếp", "Phí chờ dư", "Thêm Điểm", "Base 10km", "Dưới 100km", "Qua 100km", "Qua 300km", "Qua 500km", "Qua 1000km"],
+    ["Từ HCM", "Xe 1 tấn", "2.8×1.5×1.6m", "60 phút", 80000, 150000, 850000, 12000, 10000, 8500, 7500, 6500],
+    ["Từ ĐN", "Xe 1 tấn", "2.8×1.5×1.6m", "60 phút", 80000, 150000, 850000, 12000, 10000, 8500, 7500, 6500]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(g4Data), "G4");
+
+  XLSX.writeFile(wb, `Template_Mau_Nhap_Gia_NPV.xlsx`);
+}
+
 function importExcel(e) {
   if (currentUserRole !== 'boss') { alert("❌ Chỉ Giám đốc thao tác!"); e.target.value = ""; return; }
   const file = e.target.files[0];
@@ -714,27 +740,62 @@ function importExcel(e) {
     try {
       const data = new Uint8Array(evt.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
-      const g1Sheet = workbook.Sheets['G1'];
-      if (g1Sheet) {
-        const json = XLSX.utils.sheet_to_json(g1Sheet, { header: 1 });
-        let newRoutesVung1 = [], newRoutesVung2 = [];
-        for (let i = 1; i < json.length; i++) {
-          let row = json[i];
-          if (!row || row.length < 5) continue;
-          let rData = {
-            zone: row[0]?.toString().includes('HCM') ? 1 : 2,
-            province: row[1], code: "", area: row[2] || "",
-            deliveryTime: row[3] || "", min: parseFloat(row[4]) || 0,
-            prices: row.slice(5).map(v => parseFloat(v) || 0)
-          };
-          if (rData.zone === 1) newRoutesVung1.push(rData);
-          else newRoutesVung2.push(rData);
+      
+      let importedCount = 0;
+      
+      ['G1', 'G2', 'G3'].forEach(sheetName => {
+        const sheet = workbook.Sheets[sheetName];
+        if (sheet) {
+          const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+          const pkg = sheetName.toLowerCase();
+          let newRoutesVung1 = [], newRoutesVung2 = [];
+          for (let i = 1; i < json.length; i++) {
+            let row = json[i];
+            if (!row || row.length < 5) continue;
+            let rData = {
+              zone: row[0]?.toString().includes('HCM') ? 1 : 2,
+              province: row[1], code: "", area: row[2] || "",
+              deliveryTime: row[3] || "", min: parseFloat(row[4]) || 0,
+              prices: row.slice(5).map(v => parseFloat(v) || 0)
+            };
+            while(rData.prices.length < 5) rData.prices.push(0);
+            if (rData.zone === 1) newRoutesVung1.push(rData);
+            else newRoutesVung2.push(rData);
+          }
+          if (newRoutesVung1.length) { PRICING_DATA[pkg].vung1.routes = newRoutesVung1; importedCount++; }
+          if (newRoutesVung2.length && PRICING_DATA[pkg].vung2) { PRICING_DATA[pkg].vung2.routes = newRoutesVung2; }
         }
-        if (newRoutesVung1.length) PRICING_DATA.g1.vung1.routes = newRoutesVung1;
-        if (newRoutesVung2.length && PRICING_DATA.g1.vung2) PRICING_DATA.g1.vung2.routes = newRoutesVung2;
+      });
+      
+      const g4Sheet = workbook.Sheets['G4'];
+      if (g4Sheet) {
+         const json = XLSX.utils.sheet_to_json(g4Sheet, { header: 1 });
+         let v1 = [], v2 = [];
+         for(let i=1; i<json.length; i++) {
+            let row = json[i];
+            if(!row || row.length < 6) continue;
+            let vZone = row[0]?.toString().includes('HCM') ? 1 : 2;
+            let vData = {
+               id: vZone === 1 ? v1.length+1 : v2.length+1,
+               name: row[1], size: row[2] || "",
+               loadTime: row[3] || "", waitFee: parseFloat(row[4]) || 0,
+               extraPoint: parseFloat(row[5]) || 0,
+               basePrice: parseFloat(row[6]) || 0,
+               kmPrices: [0, ...row.slice(7).map(v => parseFloat(v)||0)]
+            };
+            while(vData.kmPrices.length < 6) vData.kmPrices.push(0);
+            if (vZone === 1) v1.push(vData); else v2.push(vData);
+         }
+         if (v1.length) { PRICING_DATA.g4.vung1.vehicles = v1; importedCount++; }
+         if (v2.length) { PRICING_DATA.g4.vung2.vehicles = v2; }
       }
-      alert("✅ Nhập cấu hình thành công tạm thời. Hãy ấn 'Lưu Bảng Giá' để áp dụng!");
-      renderContent();
+      
+      if (importedCount > 0) {
+        alert("✅ Nhập cấu hình thành công tạm thời từ Excel. Đi tới các tab để kiểm tra lại và nhấn 'Lưu Bảng Giá' để áp dụng chính thức lên hệ thống!");
+        renderContent();
+      } else {
+        alert("⚠ Không tìm thấy dữ liệu hợp lệ trong các sheet G1, G2, G3, G4. Vui lòng rà soát lại file Excel vừa tải lên và đối chiếu với File Mẫu.");
+      }
     } catch (err) { alert("❌ Lỗi đọc file: " + err.message); }
   };
   reader.readAsArrayBuffer(file);
