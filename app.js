@@ -83,7 +83,8 @@ const App = {
       wantInsurance: document.getElementById('wantInsurance').checked,
       wantDelivery: document.getElementById('wantDelivery').checked,
       wantPickup: document.getElementById('wantPickup').checked,
-      isRestricted: document.getElementById('isRestricted').checked,
+      isRestrictedPickup: document.getElementById('isRestrictedPickup') ? document.getElementById('isRestrictedPickup').checked : false,
+      isRestrictedDelivery: document.getElementById('isRestrictedDelivery') ? document.getElementById('isRestrictedDelivery').checked : false,
       vehicleType: parseInt(document.getElementById('vehicleType').value),
       distance: parseFloat(document.getElementById('distance').value) || 0,
       totalOccupiedHours: 0,
@@ -181,7 +182,7 @@ const App = {
     if (f.wantPickup) {
       const pickupProvince = f.region === 'vung1' ? 'Hồ Chí Minh' : 'Đà Nẵng';
       const da = findDeliveryArea(pickupProvince);
-      const result = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestricted);
+      const result = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestrictedPickup);
       pickupFee = result.fee;
       pickupInfo = result.truckName;
     }
@@ -191,7 +192,7 @@ const App = {
     let deliveryInfo = '';
     if (f.wantDelivery) {
       const da = findDeliveryArea(f.province);
-      const result = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestricted);
+      const result = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestrictedDelivery);
       deliveryFee = result.fee;
       deliveryInfo = result.truckName;
     }
@@ -567,7 +568,7 @@ const App = {
           return false;
         });
         if (daPick) {
-          if (f.isRestricted) {
+          if (f.isRestrictedPickup) {
             const tc = Math.max(Math.ceil(chargeableWeight/1000), f.cbm > 0 ? Math.ceil(f.cbm/6) : 1, 1);
             totalDel += daPick.fees.xe1t * tc;
           } else {
@@ -587,7 +588,7 @@ const App = {
           return false;
         });
         if (daDel) {
-          if (f.isRestricted) {
+          if (f.isRestrictedDelivery) {
             const tc = Math.max(Math.ceil(chargeableWeight/1000), f.cbm > 0 ? Math.ceil(f.cbm/6) : 1, 1);
             totalDel += daDel.fees.xe1t * tc;
           } else {

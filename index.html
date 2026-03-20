@@ -111,9 +111,14 @@
             </select>
           </div>
           <div class="form-group full-width">
-            <label class="checkbox-label" style="margin-top:4px; width:fit-content;">
-              <input type="checkbox" id="wantPickup"> <span>🚚 Lấy hàng tận nơi (phụ xe tại điểm nhận)</span>
-            </label>
+            <div class="checkbox-row" style="margin-top:4px;">
+              <label class="checkbox-label" style="width:fit-content;">
+                <input type="checkbox" id="wantPickup"> <span>Lấy hàng tận nơi</span>
+              </label>
+              <label class="checkbox-label" style="width:fit-content;">
+                <input type="checkbox" id="isRestrictedPickup"> <span class="cb-warning">Cấm tải (chỉ xe 1T)</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -139,10 +144,10 @@
         </div>
         <div class="checkbox-row" style="margin-top:8px;">
           <label class="checkbox-label">
-            <input type="checkbox" id="wantDelivery"> <span>🚚 Giao hàng tận nơi (phụ xe tại điểm trả)</span>
+            <input type="checkbox" id="wantDelivery"> <span>Giao hàng tận nơi</span>
           </label>
           <label class="checkbox-label">
-            <input type="checkbox" id="isRestricted"> <span class="cb-warning">🚫 Cấm tải (chỉ xe 1T)</span>
+            <input type="checkbox" id="isRestrictedDelivery"> <span class="cb-warning">Cấm tải (chỉ xe 1T)</span>
           </label>
         </div>
 
