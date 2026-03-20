@@ -92,9 +92,6 @@
             <label class="checkbox-label">
               <input type="checkbox" id="wantInsurance"> <span>Mua bảo hiểm (0.08%)</span>
             </label>
-            <label class="checkbox-label">
-              <input type="checkbox" id="wantDelivery"> <span>Giao hàng tận nơi</span>
-            </label>
           </div>
         </div>
 
@@ -112,6 +109,11 @@
               <option value="vung1">Vùng 1 - Hồ Chí Minh</option>
               <option value="vung2">Vùng 2 - Đà Nẵng</option>
             </select>
+          </div>
+          <div class="form-group full-width">
+            <label class="checkbox-label" style="margin-top:4px; width:fit-content;">
+              <input type="checkbox" id="wantPickup"> <span>🚚 Lấy hàng tận nơi (phụ xe tại điểm nhận)</span>
+            </label>
           </div>
         </div>
 
@@ -134,6 +136,14 @@
               <option value="suburb">Vùng xa / Ngoại thành</option>
             </select>
           </div>
+        </div>
+        <div class="checkbox-row" style="margin-top:8px;">
+          <label class="checkbox-label">
+            <input type="checkbox" id="wantDelivery"> <span>🚚 Giao hàng tận nơi (phụ xe tại điểm trả)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="isRestricted"> <span class="cb-warning">🚫 Cấm tải (chỉ xe 1T)</span>
+          </label>
         </div>
 
         <div class="form-group full-width" id="routeWarningBox"
