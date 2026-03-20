@@ -156,9 +156,12 @@ const App = {
         return false;
       });
       if (da) {
-        // Chọn loại xe giao nhận phù hợp theo khối lượng
-        const truckKey = chargeableWeight <= 1000 ? 'xe1t' : chargeableWeight <= 2000 ? 'xe2t' : chargeableWeight <= 3500 ? 'xe35t' : 'xe5t';
-        deliveryFee = da.fees[truckKey];
+        // Chọn loại xe giao nhận: xét cả trọng lượng VÀ CBM, lấy loại xe lớn hơn
+        const truckByWeight = chargeableWeight <= 1000 ? 0 : chargeableWeight <= 2000 ? 1 : chargeableWeight <= 3500 ? 2 : 3;
+        const truckByCbm = f.cbm <= 0 ? 0 : f.cbm <= 6 ? 0 : f.cbm <= 10 ? 1 : f.cbm <= 15 ? 2 : 3;
+        const truckIdx = Math.max(truckByWeight, truckByCbm);
+        const truckKeys = ['xe1t', 'xe2t', 'xe35t', 'xe5t'];
+        deliveryFee = da.fees[truckKeys[truckIdx]];
       }
     }
 
@@ -529,8 +532,11 @@ const App = {
         return false;
       });
       if (da) {
-        const truckKey = chargeableWeight <= 1000 ? 'xe1t' : chargeableWeight <= 2000 ? 'xe2t' : chargeableWeight <= 3500 ? 'xe35t' : 'xe5t';
-        deliveryFee = da.fees[truckKey];
+        const truckByWeight = chargeableWeight <= 1000 ? 0 : chargeableWeight <= 2000 ? 1 : chargeableWeight <= 3500 ? 2 : 3;
+        const truckByCbm = f.cbm <= 0 ? 0 : f.cbm <= 6 ? 0 : f.cbm <= 10 ? 1 : f.cbm <= 15 ? 2 : 3;
+        const truckIdx = Math.max(truckByWeight, truckByCbm);
+        const truckKeys = ['xe1t', 'xe2t', 'xe35t', 'xe5t'];
+        deliveryFee = da.fees[truckKeys[truckIdx]];
       }
     }
 
