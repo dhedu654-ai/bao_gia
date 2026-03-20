@@ -155,7 +155,11 @@ const App = {
         if (['Đắk Nông', 'Đắk Lắk', 'Gia Lai', 'Kon Tum'].includes(f.province)) return a.code === 'TAYNGUYEN';
         return false;
       });
-      if (da) deliveryFee = da.fees.xe2t;
+      if (da) {
+        // Chọn loại xe giao nhận phù hợp theo khối lượng
+        const truckKey = chargeableWeight <= 1000 ? 'xe1t' : chargeableWeight <= 2000 ? 'xe2t' : chargeableWeight <= 3500 ? 'xe35t' : 'xe5t';
+        deliveryFee = da.fees[truckKey];
+      }
     }
 
     // Surcharge options dùng chung
@@ -524,7 +528,10 @@ const App = {
         if (['Đắk Nông', 'Đắk Lắk', 'Gia Lai', 'Kon Tum'].includes(f.province)) return a.code === 'TAYNGUYEN';
         return false;
       });
-      if (da) deliveryFee = da.fees.xe2t;
+      if (da) {
+        const truckKey = chargeableWeight <= 1000 ? 'xe1t' : chargeableWeight <= 2000 ? 'xe2t' : chargeableWeight <= 3500 ? 'xe35t' : 'xe5t';
+        deliveryFee = da.fees[truckKey];
+      }
     }
 
     const results = Calculator.comparePackages(f.region, f.province, chargeableWeight, {
