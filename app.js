@@ -430,6 +430,7 @@ const App = {
     document.getElementById('resultEmpty').style.display = 'none';
     document.getElementById('resultSummary').classList.add('show');
     const wes = document.getElementById('wordExportSection'); if(wes) wes.style.display = 'block';
+    this.syncExportCheckboxes();
   },
 
   renderResult(data) {
@@ -542,6 +543,7 @@ const App = {
     document.getElementById('resultEmpty').style.display = 'none';
     document.getElementById('resultSummary').classList.add('show');
     const wes2 = document.getElementById('wordExportSection'); if(wes2) wes2.style.display = 'block';
+    this.syncExportCheckboxes();
   },
 
   compare() {
@@ -691,6 +693,19 @@ const App = {
     document.getElementById('cargoSection').style.display = 'block';
     document.getElementById('vehicleSection').classList.remove('show');
     document.getElementById('btnCompare').style.display = 'inline-flex';
+  },
+
+  syncExportCheckboxes() {
+    const f = this.getFormData();
+    const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = val; };
+    setChk('expOversized', f.isOversized);
+    setChk('expChemical', f.isChemical);
+    setChk('expInsurance', f.wantInsurance);
+    setChk('expIncludeDelivery', f.wantDelivery || f.wantPickup);
+    setChk('expWoodenCrate', f.woodenCrateCBM > 0);
+    setChk('expCounting', f.countingQty > 0);
+    setChk('expCOD', f.codAmount > 0);
+    setChk('expCBM', f.cbm > 0);
   },
 
   exportWord() {
@@ -989,10 +1004,51 @@ const App = {
       rows: costTableRows
     }));
 
+    // ====== DỊCH VỤ GIÁ TRỊ GIA TĂNG (từ checkbox xuất Word) ======
+    const chk = (id) => document.getElementById(id)?.checked || false;
+    const services = [];
+    if (chk('expIncludeDelivery')) services.push({ name: 'Giao / Lấy hàng tận nơi', desc: 'Xe giao hàng tận nơi tại kho, cửa hàng. Chi phí tùy loại xe và khu vực.' });
+    if (chk('expCBM')) services.push({ name: 'Quy đổi khối lượng CBM', desc: 'Hàng nhẹ cồng kềnh tính theo công thức D×R×C (mét) × 300 = kg quy đổi. Đơn giá: 550.000 VNĐ/CBM.' });
+    if (chk('expOversized')) services.push({ name: 'Xử lý hàng quá khổ', desc: 'Hàng có cạnh dài nhất > 1.5m: phụ thu 15-30% tùy gói cước.' });
+    if (chk('expChemical')) services.push({ name: 'Vận chuyển hóa chất / chất lỏng', desc: 'Hàng hóa chất, chất lỏng: phụ thu 20-30% tùy gói cước.' });
+    if (chk('expInsurance')) services.push({ name: 'Bảo hiểm hàng hóa', desc: 'Phí bảo hiểm: 0.08% giá trị hàng hóa. Không mua → bồi thường tối đa 1.500đ/kg.' });
+    if (chk('expWoodenCrate')) services.push({ name: 'Đóng kiện gỗ', desc: 'Đóng kiện gỗ bảo vệ hàng hóa: 1.200.000 VNĐ/CBM.' });
+    if (chk('expCounting')) services.push({ name: 'Kiểm đếm hàng hóa', desc: 'Kiểm đếm chi tiết sản phẩm: 2.000 VNĐ/sản phẩm.' });
+    if (chk('expCOD')) services.push({ name: 'Thu hộ COD', desc: 'Thu hộ tiền hàng: 1% giá trị thu hộ (tối thiểu 30.000đ).' });
+
+    if (services.length > 0) {
+      docChildren.push(new Paragraph({
+        spacing: { before: 300, after: 100 },
+        children: [new TextRun({ text: 'III. DỊCH VỤ GIÁ TRỊ GIA TĂNG', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
+      }));
+
+      const svcTableRows = [];
+      svcTableRows.push(new TableRow({
+        children: [
+          makeCell('STT', { bold: true, align: AlignmentType.CENTER, shade: '1B75BB', color: 'FFFFFF', width: 10 }),
+          makeCell('Dịch vụ', { bold: true, shade: '1B75BB', color: 'FFFFFF', width: 30 }),
+          makeCell('Mô tả', { bold: true, shade: '1B75BB', color: 'FFFFFF', width: 60 }),
+        ]
+      }));
+      services.forEach((svc, idx) => {
+        svcTableRows.push(new TableRow({
+          children: [
+            makeCell(String(idx + 1), { align: AlignmentType.CENTER, width: 10 }),
+            makeCell(svc.name, { bold: true, width: 30 }),
+            makeCell(svc.desc, { width: 60 }),
+          ]
+        }));
+      });
+      docChildren.push(new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: svcTableRows
+      }));
+    }
+
     // ====== CONDITIONS (điều kiện chung) ======
     docChildren.push(new Paragraph({
       spacing: { before: 300, after: 100 },
-      children: [new TextRun({ text: 'III. ĐIỀU KIỆN CHUNG', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
+      children: [new TextRun({ text: (services.length > 0 ? 'IV' : 'III') + '. ĐIỀU KIỆN CHUNG', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
     }));
 
     const defaultConditions = [
