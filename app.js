@@ -4,6 +4,8 @@ const VIETNAM_PROVINCES = [
 ];
 
 const App = {
+  _selectedWeightType: null,
+  _lastFormData: null,
   init() {
     const provinceSelect = document.getElementById('province');
     provinceSelect.innerHTML = '<option value="">-- Chọn tỉnh/TP --</option>';
@@ -116,6 +118,7 @@ const App = {
   },
 
   calculate() {
+    this._selectedWeightType = null; // Reset khi nhấn "Tính giá cước"
     const f = this.getFormData();
     const err = this.validate(f);
     if (err) { alert(err); return; }
@@ -128,6 +131,7 @@ const App = {
   },
 
   calculateRoute(f) {
+    this._lastFormData = f;
     // Tính kg tính cước
     const weightPerPiece = f.weight / f.pieces;
     const oversized = f.isOversized;
@@ -136,8 +140,15 @@ const App = {
     const cbmConvertedKg = f.cbm > 0 ? f.cbm * 300 : 0;
 
     // Nếu có CBM, quy đổi kg = CBM × 300, lấy max(thực, quy đổi)
+    // Trừ khi user đã chọn phương thức khác
     if (f.cbm > 0) {
-      chargeableWeight = Calculator.calcChargeableWeight(f.weight, f.cbm);
+      if (this._selectedWeightType === 'kg') {
+        chargeableWeight = f.weight;
+      } else if (this._selectedWeightType === 'cbm') {
+        chargeableWeight = cbmConvertedKg;
+      } else {
+        chargeableWeight = Calculator.calcChargeableWeight(f.weight, f.cbm);
+      }
     }
 
     // Tính giá cơ bản
@@ -243,13 +254,16 @@ const App = {
       }
 
       if (totalByKg && totalByCbm) {
+        // Xác định hệ thống đang dùng loại nào (logic ban đầu: max)
+        const systemSelected = chargeableWeight > f.weight ? 'cbm' : 'kg';
         cbmComparison = {
           actualKg: f.weight,
           cbmKg: Math.round(cbmConvertedKg * 100) / 100,
           cbm: f.cbm,
           totalByKg: totalByKg.total,
           totalByCbm: totalByCbm.total,
-          cheaper: totalByKg.total <= totalByCbm.total ? 'kg' : 'cbm'
+          systemSelected,
+          selected: this._selectedWeightType || systemSelected
         };
       }
     }
@@ -506,20 +520,22 @@ const App = {
     // === SO SÁNH GIÁ THEO KG VS CBM ===
     if (data.cbmComparison) {
       const c = data.cbmComparison;
+      const sel = c.selected;
       html += `<div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(27,117,187,0.04),rgba(76,175,80,0.04));border:1px solid rgba(27,117,187,0.15);border-radius:10px;">
-        <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:12px;">📊 So sánh giá: KG thực vs CBM quy đổi</div>
+        <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:4px;">📊 So sánh giá: KG thực vs CBM quy đổi</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">👆 Nhấn vào ô để chọn phương thức tính cước</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-          <div style="padding:12px;background:white;border-radius:8px;border:2px solid ${c.cheaper === 'kg' ? 'var(--green)' : 'var(--border)'};text-align:center;">
+          <div class="cbm-compare-box${sel === 'kg' ? ' selected' : ''}" onclick="App.switchComparison('kg')">
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Theo KG thực</div>
             <div style="font-size:13px;font-weight:600;color:var(--text-secondary);">${c.actualKg} kg</div>
-            <div style="font-size:20px;font-weight:800;color:${c.cheaper === 'kg' ? 'var(--green)' : 'var(--text-primary)'};margin-top:4px;">${Calculator.formatVND(c.totalByKg)}</div>
-            ${c.cheaper === 'kg' ? '<div style="margin-top:6px;font-size:11px;font-weight:700;color:var(--green);">✅ RẺ HƠN</div>' : ''}
+            <div style="font-size:20px;font-weight:800;color:${sel === 'kg' ? 'var(--green)' : 'var(--text-primary)'};margin-top:4px;">${Calculator.formatVND(c.totalByKg)}</div>
+            <div class="cbm-compare-badge ${sel === 'kg' ? 'active' : 'inactive'}">${sel === 'kg' ? '✅ ĐANG ÁP DỤNG' : 'Nhấn để chọn'}</div>
           </div>
-          <div style="padding:12px;background:white;border-radius:8px;border:2px solid ${c.cheaper === 'cbm' ? 'var(--green)' : 'var(--border)'};text-align:center;">
+          <div class="cbm-compare-box${sel === 'cbm' ? ' selected' : ''}" onclick="App.switchComparison('cbm')">
             <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">Theo CBM quy đổi</div>
             <div style="font-size:13px;font-weight:600;color:var(--text-secondary);">${c.cbm} CBM = ${c.cbmKg} kg</div>
-            <div style="font-size:20px;font-weight:800;color:${c.cheaper === 'cbm' ? 'var(--green)' : 'var(--text-primary)'};margin-top:4px;">${Calculator.formatVND(c.totalByCbm)}</div>
-            ${c.cheaper === 'cbm' ? '<div style="margin-top:6px;font-size:11px;font-weight:700;color:var(--green);">✅ RẺ HƠN</div>' : ''}
+            <div style="font-size:20px;font-weight:800;color:${sel === 'cbm' ? 'var(--green)' : 'var(--text-primary)'};margin-top:4px;">${Calculator.formatVND(c.totalByCbm)}</div>
+            <div class="cbm-compare-badge ${sel === 'cbm' ? 'active' : 'inactive'}">${sel === 'cbm' ? '✅ ĐANG ÁP DỤNG' : 'Nhấn để chọn'}</div>
           </div>
         </div>
         <div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:center;">
@@ -544,6 +560,12 @@ const App = {
     document.getElementById('resultSummary').classList.add('show');
     const wes2 = document.getElementById('wordExportSection'); if(wes2) wes2.style.display = 'block';
     this.syncExportCheckboxes();
+  },
+
+  switchComparison(choice) {
+    if (!this._lastFormData) return;
+    this._selectedWeightType = choice;
+    this.calculateRoute(this._lastFormData);
   },
 
   compare() {
@@ -774,7 +796,13 @@ const App = {
       const oversized = f.isOversized;
       let chargeableWeight = f.weight;
       if (f.cbm > 0) {
-        chargeableWeight = Calculator.calcChargeableWeight(f.weight, f.cbm);
+        if (this._selectedWeightType === 'kg') {
+          chargeableWeight = f.weight;
+        } else if (this._selectedWeightType === 'cbm') {
+          chargeableWeight = f.cbm * 300;
+        } else {
+          chargeableWeight = Calculator.calcChargeableWeight(f.weight, f.cbm);
+        }
       }
 
       const result = Calculator.calcRoutePrice(f.region, f.packageType, f.province, chargeableWeight);
