@@ -695,71 +695,195 @@ const App = {
 
   exportWord() {
     try {
-    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel } = docx;
+    const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, HeadingLevel, VerticalAlign, ShadingType } = docx;
     
     const f = this.getFormData();
     const customerName = document.getElementById('exportCustomerName')?.value || 'Quý Khách Hàng';
     const today = new Date();
     const dateStr = 'ngày ' + String(today.getDate()).padStart(2,'0') + ' tháng ' + String(today.getMonth()+1).padStart(2,'0') + ' năm ' + today.getFullYear();
-    
-    // Collect selected export options
-    const chk = (id) => document.getElementById(id)?.checked || false;
-    const expOpts = {
-      includeDelivery: chk('expIncludeDelivery'),
-      includeCBM: chk('expCBM'),
-      includeNoVat: chk('expNoneVat'),
-      includeOversized: chk('expOversized'),
-      includeChemical: chk('expChemical'),
-      includeInsurance: chk('expInsurance'),
-      includeWoodenCrate: chk('expWoodenCrate'),
-      includeCounting: chk('expCounting'),
-      includeCOD: chk('expCOD'),
-    };
 
-    // Build conditions list
-    const conditions = [];
-    conditions.push('- Phương thức vận chuyển: Vận chuyển bằng đường bộ.');
-    conditions.push('- Điều kiện vận chuyển: giao nhận trên phương tiện vận tải.');
-    
-    if (expOpts.includeNoVat) {
-      conditions.push('- Giá cước trên chưa bao gồm: VAT, và phí bốc xếp 2 đầu.');
-    }
-    if (expOpts.includeCBM) {
-      conditions.push('- Đơn giá vận chuyển: 550.000 VND/CBM.');
-    }
-    if (expOpts.includeDelivery) {
-      conditions.push('- Chi phí xe giao hàng tận nơi tại cửa hàng: 310.000 VND/chuyến.');
-    }
-    if (expOpts.includeOversized) {
-      conditions.push('- Hàng quá khổ (cạnh dài nhất > 1.5m): phụ thu 15-30% tùy gói cước.');
-    }
-    if (expOpts.includeChemical) {
-      conditions.push('- Hàng hóa chất/chất lỏng: phụ thu 20-30% tùy gói cước.');
-    }
-    if (expOpts.includeInsurance) {
-      conditions.push('- Bảo hiểm hàng hóa: 0.08% giá trị hàng hóa. Không mua → bồi thường tối đa 1.500đ/kg.');
-    }
-    if (expOpts.includeWoodenCrate) {
-      conditions.push('- Đóng kiện gỗ: 1.200.000 VND/CBM.');
-    }
-    if (expOpts.includeCounting) {
-      conditions.push('- Kiểm đếm hàng hóa: 2.000 VND/sản phẩm.');
-    }
-    if (expOpts.includeCOD) {
-      conditions.push('- Thu hộ COD: 1% giá trị thu hộ (tối thiểu 30.000đ).');
+    // ====== RE-CALCULATE costs (same logic as calculateRoute / calculateG4) ======
+    let costRows = []; // { label, value, bold?, highlight? }
+    let infoRows = []; // Thông tin chung: { label, value }
+    let totalAmount = 0;
+
+    if (f.packageType === 'g4') {
+      // --- G4: Bao Xe ---
+      const result = Calculator.calcVehiclePrice(
+        f.region, f.vehicleType, f.distance, f.totalOccupiedHours, f.drivingHours, f.extraPoints, f.hasReturn
+      );
+      if (!result) { alert('Không tìm thấy thông tin xe'); return; }
+
+      infoRows.push({ label: 'Gói cước', value: 'G4 - Bao Xe' });
+      infoRows.push({ label: 'Loại xe', value: result.vehicle.name + ' (' + result.vehicle.size + ')' });
+      infoRows.push({ label: 'Khoảng cách', value: f.distance + ' km' });
+      infoRows.push({ label: 'Thời gian giao nhận', value: result.vehicle.loadTime });
+      if (f.productName) infoRows.push({ label: 'Hàng hóa', value: f.productName });
+
+      costRows.push({ label: 'Cước vận chuyển', value: result.baseCost });
+      if (result.waitFee > 0) {
+        costRows.push({ label: 'Phí chờ (' + Number(result.waitHours.toFixed(2)) + 'h)', value: result.waitFee });
+      }
+      if (result.extraPointFee > 0) {
+        costRows.push({ label: 'Điểm giao thêm (' + f.extraPoints + ' điểm)', value: result.extraPointFee });
+      }
+      if (result.returnFee > 0) {
+        costRows.push({ label: 'Chiều về có hàng (70%)', value: result.returnFee });
+      }
+
+      let extraFees = 0;
+      if (f.woodenCrateCBM > 0) {
+        const fee = Calculator.calcWoodenCrateFee(f.woodenCrateCBM);
+        if (fee) { costRows.push({ label: 'Đóng kiện gỗ', value: fee }); extraFees += fee; }
+      }
+      if (f.countingQty > 0) {
+        const fee = Calculator.calcCountingFee(f.countingQty);
+        costRows.push({ label: 'Kiểm đếm (' + f.countingQty + ' SP)', value: fee }); extraFees += fee;
+      }
+      if (f.codAmount > 0) {
+        const fee = Calculator.calcCODFee(f.codAmount);
+        costRows.push({ label: 'Thu hộ COD', value: fee }); extraFees += fee;
+      }
+
+      const subtotal = result.totalBeforeTax + extraFees;
+      const final = Calculator.calcFinal(subtotal);
+      costRows.push({ label: 'Tạm tính', value: final.subtotal, separator: true });
+      costRows.push({ label: 'Phụ phí xăng dầu (23%)', value: final.fuel });
+      costRows.push({ label: 'VAT (10%)', value: final.vat });
+      costRows.push({ label: 'TỔNG CỘNG', value: final.total, bold: true, highlight: true });
+      totalAmount = final.total;
+
+    } else {
+      // --- G1 / G2 / G3: Tuyến cố định ---
+      const weightPerPiece = f.weight / f.pieces;
+      const oversized = f.isOversized;
+      let chargeableWeight = f.weight;
+      if (f.cbm > 0) {
+        chargeableWeight = Calculator.calcChargeableWeight(f.weight, f.cbm);
+      }
+
+      const result = Calculator.calcRoutePrice(f.region, f.packageType, f.province, chargeableWeight);
+      if (!result) { alert('Không tìm thấy tuyến đường này'); return; }
+
+      const pkgData = PRICING_DATA[f.packageType][f.region];
+
+      // Helper: tìm khu vực giao nhận theo tỉnh
+      function findDeliveryArea(province) {
+        return PRICING_DATA.deliveryFee.areas.find(a => {
+          if (['Hồ Chí Minh', 'Bình Dương', 'Đồng Nai'].includes(province)) return a.code === 'HCM';
+          if (province === 'Đà Nẵng') return a.code === 'DNG';
+          if (province === 'Hà Nội') return a.code === 'HNI';
+          if (['Khánh Hòa', 'Thừa Thiên Huế', 'Bình Định'].includes(province)) return a.code === 'NTG_HUE_BDH';
+          if (['Đắk Nông', 'Đắk Lắk', 'Gia Lai', 'Kon Tum'].includes(province)) return a.code === 'TAYNGUYEN';
+          return false;
+        });
+      }
+
+      function calcDeliveryFeeForArea(da, weight, cbm, isRestricted) {
+        if (!da) return { fee: 0, truckName: '', truckCount: 1 };
+        if (isRestricted) {
+          const trucksByWeight = Math.ceil(weight / 1000);
+          const trucksByCbm = cbm > 0 ? Math.ceil(cbm / 6) : 1;
+          const truckCount = Math.max(trucksByWeight, trucksByCbm, 1);
+          return { fee: da.fees.xe1t * truckCount, truckName: 'xe 1T × ' + truckCount + ' chuyến', truckCount };
+        }
+        const truckByWeight = weight <= 1000 ? 0 : weight <= 2000 ? 1 : weight <= 3500 ? 2 : 3;
+        const truckByCbm = cbm <= 0 ? 0 : cbm <= 6 ? 0 : cbm <= 10 ? 1 : cbm <= 15 ? 2 : 3;
+        const truckIdx = Math.max(truckByWeight, truckByCbm);
+        const truckKeys = ['xe1t', 'xe2t', 'xe35t', 'xe5t'];
+        const truckNames = ['xe 1T', 'xe 2T', 'xe 3.5T', 'xe 5T'];
+        return { fee: da.fees[truckKeys[truckIdx]], truckName: truckNames[truckIdx], truckCount: 1 };
+      }
+
+      let pickupFee = 0, pickupInfo = '';
+      if (f.wantPickup) {
+        const pickupProvince = f.region === 'vung1' ? 'Hồ Chí Minh' : 'Đà Nẵng';
+        const da = findDeliveryArea(pickupProvince);
+        const r2 = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestrictedPickup);
+        pickupFee = r2.fee; pickupInfo = r2.truckName;
+      }
+
+      let deliveryFee = 0, deliveryInfo = '';
+      if (f.wantDelivery) {
+        const da = findDeliveryArea(f.province);
+        const r2 = calcDeliveryFeeForArea(da, chargeableWeight, f.cbm, f.isRestrictedDelivery);
+        deliveryFee = r2.fee; deliveryInfo = r2.truckName;
+      }
+
+      const surchargeOpts = {
+        isOversized: oversized,
+        oversizePercent: pkgData.notes.oversizePercent,
+        isChemical: f.isChemical,
+        chemicalPercent: pkgData.notes.chemicalPercent,
+        isSuburban: f.areaType === 'suburb',
+        pickupFee, pickupInfo, deliveryFee, deliveryInfo,
+        woodenCrate: f.woodenCrateCBM > 0, cbm: f.woodenCrateCBM,
+        countingQty: f.countingQty, codAmount: f.codAmount,
+        insuranceValue: f.wantInsurance ? f.goodsValue : 0
+      };
+
+      const surchargeResult = Calculator.calcSurcharges(result.baseCost, surchargeOpts);
+      const subtotal = result.baseCost + surchargeResult.totalSurcharge;
+      const final = Calculator.calcFinal(subtotal);
+
+      const packageName = this.getPackageName(f.packageType);
+      const regionDisplay = PRICING_DATA.regions[f.region].name;
+
+      infoRows.push({ label: 'Gói cước', value: packageName });
+      infoRows.push({ label: 'Tuyến', value: regionDisplay.split(' - ')[0] + ' → ' + (f.district ? f.district + ', ' : '') + result.route.province });
+      infoRows.push({ label: 'Thời gian giao', value: result.deliveryTime });
+      infoRows.push({ label: 'KL tính cước', value: Math.round(chargeableWeight * 100) / 100 + ' kg' + (chargeableWeight > f.weight ? ' (quy đổi CBM)' : '') });
+      if (f.productName) infoRows.push({ label: 'Hàng hóa', value: f.productName });
+
+      costRows.push({ label: 'Cước cơ bản (Nấc ' + result.weightTier + ')', value: result.baseCost });
+
+      for (const s of surchargeResult.surcharges) {
+        costRows.push({ label: s.name + (s.percent ? ' (+' + s.percent + '%)' : ''), value: s.amount });
+      }
+
+      costRows.push({ label: 'Tạm tính', value: final.subtotal, separator: true });
+      costRows.push({ label: 'Phụ phí xăng dầu (23%)', value: final.fuel });
+      costRows.push({ label: 'VAT (10%)', value: final.vat });
+      costRows.push({ label: 'TỔNG CỘNG', value: final.total, bold: true, highlight: true });
+      totalAmount = final.total;
     }
 
-    // Build document
+    // ====== BUILD WORD DOCUMENT ======
     const docChildren = [];
 
-    // Title
+    // --- Helper to create table cells ---
+    const cellBorders = {
+      top: { style: BorderStyle.SINGLE, size: 1, color: 'B0B0B0' },
+      bottom: { style: BorderStyle.SINGLE, size: 1, color: 'B0B0B0' },
+      left: { style: BorderStyle.SINGLE, size: 1, color: 'B0B0B0' },
+      right: { style: BorderStyle.SINGLE, size: 1, color: 'B0B0B0' },
+    };
+
+    function makeCell(text, opts = {}) {
+      const { bold, align, shade, width, span } = opts;
+      const cellOpts = {
+        borders: cellBorders,
+        verticalAlign: VerticalAlign.CENTER,
+        children: [new Paragraph({
+          alignment: align || AlignmentType.LEFT,
+          spacing: { before: 40, after: 40 },
+          children: [new TextRun({ text: String(text), bold: !!bold, size: 22, font: 'Times New Roman', color: opts.color || '000000' })]
+        })]
+      };
+      if (shade) cellOpts.shading = { fill: shade, type: ShadingType ? ShadingType.CLEAR : undefined };
+      if (width) cellOpts.width = { size: width, type: WidthType.PERCENTAGE };
+      if (span) cellOpts.columnSpan = span;
+      return new TableCell(cellOpts);
+    }
+
+    // --- Title ---
     docChildren.push(new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 200 },
       children: [new TextRun({ text: 'BẢNG BÁO GIÁ', bold: true, size: 36, font: 'Times New Roman', color: '1B75BB' })]
     }));
 
-    // Ref number
+    // --- Ref number ---
     const refNum = String(today.getDate()).padStart(2,'0') + String(today.getMonth()+1).padStart(2,'0');
     docChildren.push(new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -767,7 +891,7 @@ const App = {
       children: [new TextRun({ text: 'Số: ' + refNum + '/NPV-' + today.getFullYear(), bold: true, size: 24, font: 'Times New Roman' })]
     }));
 
-    // Customer
+    // --- Customer ---
     docChildren.push(new Paragraph({
       spacing: { after: 200 },
       children: [
@@ -776,13 +900,13 @@ const App = {
       ]
     }));
 
-    // Greeting  
+    // --- Greeting ---
     docChildren.push(new Paragraph({
       spacing: { after: 200 },
       children: [new TextRun({ text: 'Trước hết, NPV gửi lời cảm ơn sự quan tâm của quý công ty đến loại hình dịch vụ vận chuyển NPV.', size: 24, font: 'Times New Roman' })]
     }));
 
-    // Transport description
+    // --- Transport description ---
     const regionName = f.region ? (PRICING_DATA.regions[f.region]?.name || '') : '';
     const provinceName = document.getElementById('province').selectedOptions[0]?.text || '';
     if (regionName && provinceName) {
@@ -792,24 +916,112 @@ const App = {
       }));
     }
 
-    // Conditions
-    for (const cond of conditions) {
+    // ====== INFO TABLE (thông tin chung) ======
+    docChildren.push(new Paragraph({
+      spacing: { before: 200, after: 100 },
+      children: [new TextRun({ text: 'I. THÔNG TIN VẬN CHUYỂN', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
+    }));
+
+    const infoTableRows = [];
+    for (const info of infoRows) {
+      infoTableRows.push(new TableRow({
+        children: [
+          makeCell(info.label, { bold: true, width: 35, shade: 'F0F7FF' }),
+          makeCell(info.value, { width: 65 })
+        ]
+      }));
+    }
+    docChildren.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: infoTableRows
+    }));
+
+    // ====== COST TABLE (bảng chi phí chi tiết) ======
+    docChildren.push(new Paragraph({
+      spacing: { before: 300, after: 100 },
+      children: [new TextRun({ text: 'II. BẢNG CHI PHÍ CHI TIẾT', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
+    }));
+
+    const costTableRows = [];
+    // Header row
+    costTableRows.push(new TableRow({
+      children: [
+        makeCell('STT', { bold: true, align: AlignmentType.CENTER, shade: '1B75BB', color: 'FFFFFF', width: 10 }),
+        makeCell('Hạng mục chi phí', { bold: true, align: AlignmentType.CENTER, shade: '1B75BB', color: 'FFFFFF', width: 55 }),
+        makeCell('Thành tiền (VNĐ)', { bold: true, align: AlignmentType.CENTER, shade: '1B75BB', color: 'FFFFFF', width: 35 }),
+      ]
+    }));
+
+    let stt = 1;
+    for (const row of costRows) {
+      if (row.highlight) {
+        // Total row - special styling
+        costTableRows.push(new TableRow({
+          children: [
+            makeCell('', { shade: '1B75BB', width: 10 }),
+            makeCell(row.label, { bold: true, shade: '1B75BB', color: 'FFFFFF', width: 55 }),
+            makeCell(Calculator.formatVND(row.value), { bold: true, align: AlignmentType.RIGHT, shade: '1B75BB', color: 'FFFFFF', width: 35 }),
+          ]
+        }));
+      } else if (row.separator) {
+        // Subtotal row
+        costTableRows.push(new TableRow({
+          children: [
+            makeCell('', { shade: 'F0F7FF', width: 10 }),
+            makeCell(row.label, { bold: true, shade: 'F0F7FF', width: 55 }),
+            makeCell(Calculator.formatVND(row.value), { bold: true, align: AlignmentType.RIGHT, shade: 'F0F7FF', width: 35 }),
+          ]
+        }));
+      } else {
+        costTableRows.push(new TableRow({
+          children: [
+            makeCell(String(stt), { align: AlignmentType.CENTER, width: 10 }),
+            makeCell(row.label, { bold: !!row.bold, width: 55 }),
+            makeCell(Calculator.formatVND(row.value), { align: AlignmentType.RIGHT, width: 35 }),
+          ]
+        }));
+        stt++;
+      }
+    }
+
+    docChildren.push(new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: costTableRows
+    }));
+
+    // ====== CONDITIONS (điều kiện chung) ======
+    docChildren.push(new Paragraph({
+      spacing: { before: 300, after: 100 },
+      children: [new TextRun({ text: 'III. ĐIỀU KIỆN CHUNG', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
+    }));
+
+    const defaultConditions = [
+      '- Phương thức vận chuyển: Vận chuyển bằng đường bộ.',
+      '- Điều kiện vận chuyển: giao nhận trên phương tiện vận tải.',
+      '- Cước phí cầu đường, bến bãi (nếu có) thanh toán theo phát sinh thực tế.',
+      '- Hàng nguyên khối kiện ≥ 200kg: Cộng thêm phí nâng hạ theo thỏa thuận.',
+      '- Booking trước 16h30. Nhận hàng: 8h-19h (Thứ 2 đến Thứ 7).',
+      '- Bảo hiểm hàng hóa: 0.08% giá trị hàng hóa. Không mua → bồi thường tối đa 1.500đ/kg.',
+    ];
+
+    for (const cond of defaultConditions) {
       docChildren.push(new Paragraph({
-        spacing: { after: 100 },
-        children: [new TextRun({ text: cond, bold: true, size: 24, font: 'Times New Roman' })]
+        spacing: { after: 60 },
+        children: [new TextRun({ text: cond, size: 22, font: 'Times New Roman' })]
       }));
     }
 
-    // Spacing
+    // --- Spacing ---
     docChildren.push(new Paragraph({ spacing: { after: 300 }, children: [] }));
 
-    // Sign-off date
+    // --- Sign-off date ---
     docChildren.push(new Paragraph({
       alignment: AlignmentType.RIGHT,
       spacing: { after: 200 },
       children: [new TextRun({ text: (regionName ? regionName.split(' - ')[1] : 'TP.HCM') + ', ' + dateStr, bold: true, italics: true, size: 24, font: 'Times New Roman' })]
     }));
 
+    // --- Build and download ---
     const doc = new Document({
       sections: [{ properties: {}, children: docChildren }]
     });
