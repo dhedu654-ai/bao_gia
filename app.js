@@ -845,7 +845,7 @@ const App = {
       const regionDisplay = PRICING_DATA.regions[f.region].name;
 
       infoRows.push({ label: 'Gói cước', value: packageName });
-      infoRows.push({ label: 'Tuyến', value: regionDisplay.split(' - ')[0] + ' → ' + (f.district ? f.district + ', ' : '') + result.route.province });
+      infoRows.push({ label: 'Tuyến', value: (regionDisplay.split(' - ')[1] || regionDisplay) + ' → ' + (f.district ? f.district + ', ' : '') + result.route.province });
       infoRows.push({ label: 'Thời gian giao', value: result.deliveryTime });
       infoRows.push({ label: 'KL tính cước', value: Math.round(chargeableWeight * 100) / 100 + ' kg' + (chargeableWeight > f.weight ? ' (quy đổi CBM)' : '') });
       if (f.productName) infoRows.push({ label: 'Hàng hóa', value: f.productName });
@@ -1004,22 +1004,23 @@ const App = {
       rows: costTableRows
     }));
 
-    // ====== DỊCH VỤ GIÁ TRỊ GIA TĂNG (từ checkbox xuất Word) ======
+    // ====== CÁC DỊCH VỤ KHÁC (chỉ hiện dịch vụ chưa có trong bảng chi phí) ======
     const chk = (id) => document.getElementById(id)?.checked || false;
     const services = [];
-    if (chk('expIncludeDelivery')) services.push({ name: 'Giao / Lấy hàng tận nơi', desc: 'Xe giao hàng tận nơi tại kho, cửa hàng. Chi phí tùy loại xe và khu vực.' });
-    if (chk('expCBM')) services.push({ name: 'Quy đổi khối lượng CBM', desc: 'Hàng nhẹ cồng kềnh tính theo công thức D×R×C (mét) × 300 = kg quy đổi. Đơn giá: 550.000 VNĐ/CBM.' });
-    if (chk('expOversized')) services.push({ name: 'Xử lý hàng quá khổ', desc: 'Hàng có cạnh dài nhất > 1.5m: phụ thu 15-30% tùy gói cước.' });
-    if (chk('expChemical')) services.push({ name: 'Vận chuyển hóa chất / chất lỏng', desc: 'Hàng hóa chất, chất lỏng: phụ thu 20-30% tùy gói cước.' });
-    if (chk('expInsurance')) services.push({ name: 'Bảo hiểm hàng hóa', desc: 'Phí bảo hiểm: 0.08% giá trị hàng hóa. Không mua → bồi thường tối đa 1.500đ/kg.' });
-    if (chk('expWoodenCrate')) services.push({ name: 'Đóng kiện gỗ', desc: 'Đóng kiện gỗ bảo vệ hàng hóa: 1.200.000 VNĐ/CBM.' });
-    if (chk('expCounting')) services.push({ name: 'Kiểm đếm hàng hóa', desc: 'Kiểm đếm chi tiết sản phẩm: 2.000 VNĐ/sản phẩm.' });
-    if (chk('expCOD')) services.push({ name: 'Thu hộ COD', desc: 'Thu hộ tiền hàng: 1% giá trị thu hộ (tối thiểu 30.000đ).' });
+    // Chỉ thêm nếu checkbox được tick VÀ dịch vụ đó chưa nằm trong bảng chi phí
+    if (chk('expIncludeDelivery') && !f.wantDelivery && !f.wantPickup) services.push({ name: 'Giao / Lấy hàng tận nơi', desc: 'Xe giao hàng tận nơi tại kho, cửa hàng. Chi phí tùy loại xe và khu vực.' });
+    if (chk('expCBM') && !(f.cbm > 0)) services.push({ name: 'Quy đổi khối lượng CBM', desc: 'Hàng nhẹ cồng kềnh tính theo công thức D×R×C (mét) × 300 = kg quy đổi. Đơn giá: 550.000 VNĐ/CBM.' });
+    if (chk('expOversized') && !f.isOversized) services.push({ name: 'Xử lý hàng quá khổ', desc: 'Hàng có cạnh dài nhất > 1.5m: phụ thu 15-30% tùy gói cước.' });
+    if (chk('expChemical') && !f.isChemical) services.push({ name: 'Vận chuyển hóa chất / chất lỏng', desc: 'Hàng hóa chất, chất lỏng: phụ thu 20-30% tùy gói cước.' });
+    if (chk('expInsurance') && !f.wantInsurance) services.push({ name: 'Bảo hiểm hàng hóa', desc: 'Phí bảo hiểm: 0.08% giá trị hàng hóa. Không mua → bồi thường tối đa 1.500đ/kg.' });
+    if (chk('expWoodenCrate') && !(f.woodenCrateCBM > 0)) services.push({ name: 'Đóng kiện gỗ', desc: 'Đóng kiện gỗ bảo vệ hàng hóa: 1.200.000 VNĐ/CBM.' });
+    if (chk('expCounting') && !(f.countingQty > 0)) services.push({ name: 'Kiểm đếm hàng hóa', desc: 'Kiểm đếm chi tiết sản phẩm: 2.000 VNĐ/sản phẩm.' });
+    if (chk('expCOD') && !(f.codAmount > 0)) services.push({ name: 'Thu hộ COD', desc: 'Thu hộ tiền hàng: 1% giá trị thu hộ (tối thiểu 30.000đ).' });
 
     if (services.length > 0) {
       docChildren.push(new Paragraph({
         spacing: { before: 300, after: 100 },
-        children: [new TextRun({ text: 'III. DỊCH VỤ GIÁ TRỊ GIA TĂNG', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
+        children: [new TextRun({ text: 'III. CÁC DỊCH VỤ KHÁC', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
       }));
 
       const svcTableRows = [];
@@ -1042,28 +1043,6 @@ const App = {
       docChildren.push(new Table({
         width: { size: 100, type: WidthType.PERCENTAGE },
         rows: svcTableRows
-      }));
-    }
-
-    // ====== CONDITIONS (điều kiện chung) ======
-    docChildren.push(new Paragraph({
-      spacing: { before: 300, after: 100 },
-      children: [new TextRun({ text: (services.length > 0 ? 'IV' : 'III') + '. ĐIỀU KIỆN CHUNG', bold: true, size: 24, font: 'Times New Roman', color: '1B75BB' })]
-    }));
-
-    const defaultConditions = [
-      '- Phương thức vận chuyển: Vận chuyển bằng đường bộ.',
-      '- Điều kiện vận chuyển: giao nhận trên phương tiện vận tải.',
-      '- Cước phí cầu đường, bến bãi (nếu có) thanh toán theo phát sinh thực tế.',
-      '- Hàng nguyên khối kiện ≥ 200kg: Cộng thêm phí nâng hạ theo thỏa thuận.',
-      '- Booking trước 16h30. Nhận hàng: 8h-19h (Thứ 2 đến Thứ 7).',
-      '- Bảo hiểm hàng hóa: 0.08% giá trị hàng hóa. Không mua → bồi thường tối đa 1.500đ/kg.',
-    ];
-
-    for (const cond of defaultConditions) {
-      docChildren.push(new Paragraph({
-        spacing: { after: 60 },
-        children: [new TextRun({ text: cond, size: 22, font: 'Times New Roman' })]
       }));
     }
 
